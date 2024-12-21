@@ -1,0 +1,6 @@
+[package]
+name = "kofl"
+version = "0.1.0"
+edition = "2021"
+description = "A secure password manager CLI written in Rust"
+[dependencies]
