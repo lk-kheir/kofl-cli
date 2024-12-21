@@ -1,9 +1,10 @@
-mod Cli {
+pub mod Cli {
 use std::fmt;
+use crate::errors::{ErrorExecution, ErrorValidation};
 pub trait Command {
-    fn execute(&self) -> String;
-    fn validate(&self) -> String;
-    fn display(&self) -> String;
+    fn execute(&self) -> Result<(), ErrorExecution>;
+    fn validate(&self) -> Result<(), ErrorValidation>;
+    fn display(&self);
 }
 
 
@@ -13,9 +14,9 @@ pub struct Add {
 }
 
 impl  Add {
-    fn new(name: String, password: String) -> Add
+    pub fn new(name: String, password: String) -> Add
     {
-        Add{name: "facebook".to_string(), password: "whocares".to_string()}
+        Add{name, password}
     }
 }
 
@@ -36,16 +37,17 @@ impl fmt::Debug for Add {
 }
 
 impl Command for Add {
-    fn execute(&self) -> String  {
-        String::from("this this execute funtion")
+    fn execute(&self) -> Result<(), ErrorExecution>  {
+        return Ok(())    
     }
 
-    fn validate(&self) -> String  {
-        String::from("this this validate  funtion")
+    fn validate(&self) -> Result<(), ErrorValidation>  {
+        return Ok(())
     }
 
-    fn display(&self) -> String  {
-        String::from("this this display funtion")
+    fn display(&self) {
+        println!("Add command with name = {}, password = {}", self.name, self.password);
+        ()
     }
 }
 
