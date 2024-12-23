@@ -1,9 +1,10 @@
-use std::fmt;
+use std::fmt::{self, write};
 
 pub enum ErrorValidation {
     EmptyName,
     LongName,
     UnrespectedPasswordProtocol,
+    StoragePath
 }
 
 
@@ -16,6 +17,7 @@ impl fmt::Display for ErrorValidation {
             ErrorValidation::LongName  => write!(f, "Long name expected no more than 60 caracters (example))"),
             ErrorValidation::EmptyName  => write!(f, "Provid a name to be associated with Your Password"),
             ErrorValidation::UnrespectedPasswordProtocol  => write!(f, "Password does not respect the the security protocol"),
+            ErrorValidation::StoragePath => write("Storage Path not found"),
         }
         
     }

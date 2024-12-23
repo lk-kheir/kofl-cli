@@ -1,4 +1,4 @@
-pub mod Cli {
+pub mod cli {
 use std::fmt;
 use crate::errors::{ErrorExecution, ErrorValidation};
 pub trait Command {
@@ -8,26 +8,26 @@ pub trait Command {
 }
 
 
-pub struct Add {
+pub struct AddCmd {
     name: String,
     password: String,
 }
 
-impl  Add {
-    pub fn new(name: String, password: String) -> Add
+impl  AddCmd {
+    pub fn new(name: String, password: String) -> AddCmd
     {
-        Add{name, password}
+        AddCmd{name, password}
     }
 }
 
-impl PartialEq for Add {
+impl PartialEq for AddCmd {
     fn eq(&self, other: &Self) -> bool {
         if (self.name == other.name) && (self.password == other.password) {return true}
         false
     }
 }
 
-impl fmt::Debug for Add {
+impl fmt::Debug for AddCmd {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Add Command")
          .field("name", &self.name)
@@ -36,7 +36,7 @@ impl fmt::Debug for Add {
     }
 }
 
-impl Command for Add {
+impl Command for AddCmd {
     fn execute(&self) -> Result<(), ErrorExecution>  {
         return Ok(())    
     }
@@ -60,8 +60,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let add_commad: Add = Add::new("facebook".to_string(), "whocares".to_string());
-        assert_eq!(add_commad, Add {
+        let add_commad: AddCmd = AddCmd::new("facebook".to_string(), "whocares".to_string());
+        assert_eq!(add_commad, AddCmd {
             name: "facebook".to_string(),
             password: "whocares".to_string()
         }
