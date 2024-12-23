@@ -1,17 +1,24 @@
 pub mod cli {
 use std::fmt;
+use std::fs::File;
+use std::io::Error as IOError;
+use std::path::PathBuf;
+use std::env;
 use crate::errors::{ErrorExecution, ErrorValidation};
+use crate::config::config::KoflGlobalConfig;
 pub trait Command {
     fn execute(&self) -> Result<(), ErrorExecution>;
     fn validate(&self) -> Result<(), ErrorValidation>;
     fn display(&self);
 }
 
+// maybe ent_name and ent_pass is much better
 
 pub struct AddCmd {
     name: String,
     password: String,
 }
+
 
 impl  AddCmd {
     pub fn new(name: String, password: String) -> AddCmd
@@ -51,6 +58,44 @@ impl Command for AddCmd {
     }
 }
 
+
+pub struct InitCmd {
+    // for now is emty 
+}
+
+impl InitCmd {
+    pub fn new() -> Self {
+        InitCmd{}
+    }
+
+    pub fn check_existing_config(KGC: &KoflGlobalConfig) -> bool {
+        todo!("look into home directory and check if the config file exists");
+    }
+
+
+
+}
+
+
+impl Command for InitCmd {
+    fn execute(&self) -> Result<(), ErrorExecution>  {
+        
+        File::create("/home/zineddine/.kofl").unwrap();
+
+        Ok(())
+    }
+
+    fn validate(&self) -> Result<(), ErrorValidation>  {
+
+        // if init command is used when already someconfig exists throw an erro
+        return Ok(())
+    }
+
+    fn display(&self) {
+        println!("Init Command");
+        ()
+    }
+}
 
 
 

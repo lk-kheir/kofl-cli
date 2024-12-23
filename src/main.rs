@@ -1,9 +1,13 @@
 mod cli;
 mod errors;
+mod config;
 
-
+use std::fs;
+use std::env;
+use std::path::PathBuf;
+use std::process::exit;
 use clap::{Parser, Subcommand};
-use cli::cli::{AddCmd, Command};
+use cli::cli::{AddCmd, InitCmd, Command};
 
 
 #[derive(Parser)]
@@ -22,9 +26,32 @@ enum Commands {
         // #[arg(short, long)]
         password: String,
     },
-}
+    Init {
 
+    }
+}
+#[warn(unused_variables)]
 fn main() {
+
+    // try to load the config file from home directory
+
+    if let Some(home_dir) = env::home_dir() {
+        // Construct the path to the configuration file
+        let mut config_file_path = PathBuf::from(home_dir);
+        config_file_path.push(".kofl");
+
+        // Check if the configuration file exists
+        if config_file_path.exists() {
+            println!("Configuration file exists at: {:?}", config_file_path);
+        } else {
+            println!("Configuration file does not exist.");
+            println!("run: <kofl init> to init .config file");
+            // exit(1);
+        }
+    } else {
+        println!("Could not determine home directory.");
+    }
+
     let cli = Cli::parse();
 
     match &cli.command {
@@ -43,6 +70,10 @@ fn main() {
                     eprintln!("Error executing command");
                 }
             }
+        },
+        Commands::Init {  } => {
+            let InitCommand = InitCmd::new();
+            let _ = InitCommand.execute();
         }
     }
 }
