@@ -5,7 +5,7 @@ use std::io::Error as IOError;
 use std::path::PathBuf;
 use std::env;
 use crate::errors::{ErrorExecution, ErrorValidation};
-use crate::config::config::KoflGlobalConfig;
+use crate::config::Config::KoflGlobalConfig;
 pub trait Command {
     fn execute(&self) -> Result<(), ErrorExecution>;
     fn validate(&self) -> Result<(), ErrorValidation>;
@@ -67,12 +67,6 @@ impl InitCmd {
     pub fn new() -> Self {
         InitCmd{}
     }
-
-    pub fn check_existing_config(KGC: &KoflGlobalConfig) -> bool {
-        todo!("look into home directory and check if the config file exists");
-    }
-
-
 
 }
 

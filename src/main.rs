@@ -1,6 +1,7 @@
 mod cli;
 mod errors;
 mod config;
+mod utils;
 
 use std::fs;
 use std::env;
@@ -8,7 +9,7 @@ use std::path::PathBuf;
 use std::process::exit;
 use clap::{Parser, Subcommand};
 use cli::cli::{AddCmd, InitCmd, Command};
-
+use config::Config::KoflGlobalConfig;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -33,6 +34,11 @@ enum Commands {
 #[warn(unused_variables)]
 fn main() {
 
+    let mut kgc: KoflGlobalConfig = KoflGlobalConfig::new();
+    kgc.load();
+    println!("{:?}", kgc);
+
+    return;
     // try to load the config file from home directory
 
     if let Some(home_dir) = env::home_dir() {
