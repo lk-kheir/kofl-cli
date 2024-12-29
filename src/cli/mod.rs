@@ -1,14 +1,18 @@
 pub mod cli {
 use std::fmt;
-use std::fs::File;
-use std::io::Error as IOError;
+use std::fs::{File, OpenOptions};
+use std::io::{Error as IOError, Write};
 use std::path::PathBuf;
 use std::env;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::config::Config::KoflGlobalConfig;
+use crate::context::Context;
+
+#[warn(unused_variables)]
+#[warn(unused_imports)]
 pub trait Command {
-    fn execute(&self) -> Result<(), ErrorExecution>;
-    fn validate(&self) -> Result<(), ErrorValidation>;
+    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>;
+    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>;
     fn display(&self);
 }
 
@@ -44,11 +48,27 @@ impl fmt::Debug for AddCmd {
 }
 
 impl Command for AddCmd {
-    fn execute(&self) -> Result<(), ErrorExecution>  {
-        return Ok(())    
+    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+        let db_file_path = context.kgc.get_data_storage_path();
+        // Open the file in write mode (creates a new file or truncates an existing file)
+        let mut file = match OpenOptions::new()
+            .append(true)
+            .create(true)
+            .write(true)
+            .open(db_file_path) 
+        {
+            Ok(file) => file,
+            Err(e) => return Err(ErrorExecution::IoError(e)),
+        };
+
+        // Write the name and password to the file
+        match writeln!(file, "name: {} password: {}", self.name, self.password) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(ErrorExecution::IoError(e)),
+        }    
     }
 
-    fn validate(&self) -> Result<(), ErrorValidation>  {
+    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
         return Ok(())
     }
 
@@ -72,14 +92,12 @@ impl InitCmd {
 
 
 impl Command for InitCmd {
-    fn execute(&self) -> Result<(), ErrorExecution>  {
+    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
         
-        File::create("/home/zineddine/.kofl").unwrap();
-
         Ok(())
     }
 
-    fn validate(&self) -> Result<(), ErrorValidation>  {
+    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
 
         // if init command is used when already someconfig exists throw an erro
         return Ok(())

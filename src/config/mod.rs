@@ -25,9 +25,13 @@ pub mod Config {
                 user_id: String::from("1234567"), // dummy change later with random num generator,
                 username: match env::var(key) {
                     Ok(val) => val,
-                    Err(e) => String::from("user_12234"),
+                    Err(_) => String::from("user_12234"),
                 },
             }
+        }
+
+        pub fn get_data_storage_path<'a>(&'a self) -> &'a PathBuf {
+            &self.data_storage_path
         }
 
         pub fn load(&mut self) {

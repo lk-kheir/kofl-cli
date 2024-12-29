@@ -2,6 +2,7 @@ mod cli;
 mod errors;
 mod config;
 mod utils;
+mod context;
 
 use std::fs;
 use std::env;
@@ -10,6 +11,7 @@ use std::process::exit;
 use clap::{Parser, Subcommand};
 use cli::cli::{AddCmd, InitCmd, Command};
 use config::Config::KoflGlobalConfig;
+use context::Context;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -32,31 +34,12 @@ enum Commands {
     }
 }
 #[warn(unused_variables)]
-fn main() {
+#[warn(unused_imports)]
+fn main() -> () {
 
-    let mut kgc: KoflGlobalConfig = KoflGlobalConfig::new();
-    kgc.load();
-    println!("{:?}", kgc);
+    let context = Context::new();
 
-    return;
-    // try to load the config file from home directory
-
-    if let Some(home_dir) = env::home_dir() {
-        // Construct the path to the configuration file
-        let mut config_file_path = PathBuf::from(home_dir);
-        config_file_path.push(".kofl");
-
-        // Check if the configuration file exists
-        if config_file_path.exists() {
-            println!("Configuration file exists at: {:?}", config_file_path);
-        } else {
-            println!("Configuration file does not exist.");
-            println!("run: <kofl init> to init .config file");
-            // exit(1);
-        }
-    } else {
-        println!("Could not determine home directory.");
-    }
+    println!("kgc = {:?}", context.kgc);
 
     let cli = Cli::parse();
 
@@ -64,11 +47,11 @@ fn main() {
         Commands::Add { name, password } => {
             let add_command = AddCmd::new(name.to_string(), password.to_string());
 
-            match add_command.validate() {
+            match add_command.validate(&context) {
                 Ok(_) => {println!("validation done");}
                 Err(_) => {println!("OOps somtheing went wroong during validation");}
             }
-            match add_command.execute() {
+            match add_command.execute(&context) {
                 Ok(_) => {
                     add_command.display();
                 }
@@ -79,7 +62,7 @@ fn main() {
         },
         Commands::Init {  } => {
             let InitCommand = InitCmd::new();
-            let _ = InitCommand.execute();
+            let _ = InitCommand.execute(&context);
         }
     }
 }

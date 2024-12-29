@@ -1,5 +1,5 @@
 use std::fmt::{self, write};
-
+use std::io;
 pub enum ErrorValidation {
     EmptyName,
     LongName,
@@ -23,17 +23,21 @@ impl fmt::Display for ErrorValidation {
     }
 }
 pub enum ErrorExecution {
-    Unknown
+    IoError(io::Error),
+    Unknown,
 }
 
-
-impl fmt::Display for ErrorExecution {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        match self {
-            ErrorExecution::Unknown  => write!(f, "Something unexpected happened during execution"),
-        }
-        
+impl From<io::Error> for ErrorExecution {
+    fn from(err: io::Error) -> ErrorExecution {
+        ErrorExecution::IoError(err)
     }
 }
 
+impl fmt::Display for ErrorExecution {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ErrorExecution::IoError(e) => write!(f, "I/O Error: {}", e),
+            ErrorExecution::Unknown => write!(f, "Something unexpected happened during execution"),
+        }
+    }
+}
