@@ -2,6 +2,7 @@ mod cli;
 mod errors;
 mod config;
 mod utils;
+mod db;
 mod context;
 
 use std::fs;
@@ -37,7 +38,7 @@ enum Commands {
 #[warn(unused_imports)]
 fn main() -> () {
 
-    let context = Context::new();
+    let context = Context::new().unwrap();
 
     println!("kgc = {:?}", context.kgc);
 

@@ -21,7 +21,7 @@ pub mod Config {
             let key = "USER";
             KoflGlobalConfig {
                 config_path: home_dir.join(".kofl"), // Example using the home directory
-                data_storage_path: home_dir.join("kofl_db"),
+                data_storage_path: home_dir.join("kofl.sqlite"),
                 user_id: String::from("1234567"), // dummy change later with random num generator,
                 username: match env::var(key) {
                     Ok(val) => val,
