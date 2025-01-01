@@ -36,6 +36,19 @@ pub mod Db {
             Ok(())
         }
 
+        pub fn get_entry_by_name(&self, ent_name: &str) -> Result<Entry, rusqlite::Error> {
+            let mut stmt = self.connection.prepare("SELECT id, ent_name, password_hash, timestamp FROM entry WHERE ent_name = ?1")?;
+            let entry = stmt.query_row(params![ent_name], |row| {
+                Ok(Entry {
+                    id: row.get(0)?,
+                    ent_name: row.get(1)?,
+                    password_hash: row.get(2)?,
+                    timestamp: row.get(3)?,
+                })
+            })?;
+            Ok(entry)
+        }
+
         pub fn get_entry(&self, id: u32) -> Result<Entry, rusqlite::Error> {
             let mut stmt = self.connection.prepare("SELECT id, ent_name, password_hash, timestamp FROM entry WHERE id = ?1")?;
             let entry = stmt.query_row(params![id], |row| {

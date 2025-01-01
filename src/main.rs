@@ -10,7 +10,7 @@ use std::env;
 use std::path::PathBuf;
 use std::process::exit;
 use clap::{Parser, Subcommand};
-use cli::cli::{AddCmd, InitCmd, Command};
+use cli::cli::{AddCmd, InitCmd, GetCmd, Command};
 use config::Config::KoflGlobalConfig;
 use context::Context;
 
@@ -24,46 +24,58 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Add {
-        // #[arg(short, long)]
         name: String,
-        
-        // #[arg(short, long)]
         password: String,
     },
-    Init {
-
+    Init { },
+    Get {
+        ent_name: String
     }
 }
+
+fn execute_command<T: Command>(cmd: &T, context: &Context) {
+    match cmd.validate(context) {
+        Ok(_) => {
+            match cmd.execute(context) {
+                Ok(_) => {
+                    cmd.display();
+                }
+                Err(exec_err) => {
+                    eprintln!("Error during execution: {}", exec_err);
+                }
+            }
+        }
+        Err(val_err) => {
+            match val_err {
+                errors::ErrorValidation::UnprovidedMasterKey => {
+                    eprintln!("Please provide a master key");
+                }
+                _ => eprintln!("Validation error: {}", val_err)
+            }
+        }
+    }
+}
+
 #[warn(unused_variables)]
 #[warn(unused_imports)]
 fn main() -> () {
-
     let context = Context::new().unwrap();
-
     println!("kgc = {:?}", context.kgc);
 
     let cli = Cli::parse();
 
-    match &cli.command {
+    match &cli.command { 
+        Commands::Init {  } => {
+            let init_command = InitCmd::new();
+            execute_command(&init_command, &context);
+        },
         Commands::Add { name, password } => {
             let add_command = AddCmd::new(name.to_string(), password.to_string());
-
-            match add_command.validate(&context) {
-                Ok(_) => {println!("validation done");}
-                Err(_) => {println!("OOps somtheing went wroong during validation");}
-            }
-            match add_command.execute(&context) {
-                Ok(_) => {
-                    add_command.display();
-                }
-                Err(e) => {
-                    eprintln!("Error executing command");
-                }
-            }
+            execute_command(&add_command, &context);
         },
-        Commands::Init {  } => {
-            let InitCommand = InitCmd::new();
-            let _ = InitCommand.execute(&context);
+        Commands::Get { ent_name  } => {
+            let get_command = GetCmd::new(ent_name.to_string());
+            execute_command(&get_command, &context);
         }
     }
 }

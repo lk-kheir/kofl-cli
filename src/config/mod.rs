@@ -6,6 +6,7 @@ pub mod Config {
     use std::fs;
     use std::path::PathBuf;
     use toml;
+    
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct KoflGlobalConfig {
@@ -13,6 +14,8 @@ pub mod Config {
         data_storage_path: PathBuf,
         user_id: String,
         username: String,
+        salt: String,
+        master_key_provided: bool
     }
 
     impl KoflGlobalConfig {
@@ -27,11 +30,21 @@ pub mod Config {
                     Ok(val) => val,
                     Err(_) => String::from("user_12234"),
                 },
+                salt: String::from(""),
+                master_key_provided: false
             }
         }
 
         pub fn get_data_storage_path<'a>(&'a self) -> &'a PathBuf {
             &self.data_storage_path
+        }
+
+        pub fn set_salt(&mut self, salt_val: String) {
+            self.salt = salt_val.clone();
+        }
+
+        pub fn is_master_key_provided(&self) -> bool {
+            self.master_key_provided
         }
 
         pub fn load(&mut self) {

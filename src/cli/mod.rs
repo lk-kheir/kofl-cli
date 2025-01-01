@@ -1,15 +1,11 @@
 pub mod cli {
 use std::fmt;
-use std::fs::{File, OpenOptions};
-use std::io::{Error as IOError, Write};
-use std::path::PathBuf;
-use std::env;
 use crate::errors::{ErrorExecution, ErrorValidation};
-use crate::config::Config::KoflGlobalConfig;
 use crate::context::Context;
 use crate::db::Db::Entry;
 use chrono::prelude::*;
-
+use rand::{thread_rng, Rng};
+use rand::distributions::Alphanumeric;
 
 #[warn(unused_variables)]
 #[warn(unused_imports)]
@@ -67,6 +63,13 @@ impl Command for AddCmd {
     }
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+        if context.kgc.is_master_key_provided() {
+            println!("Master key is provided");
+        }
+        else {
+            println!("Master key is not provided");
+            return Err(ErrorValidation::UnprovidedMasterKey);
+        }
         return Ok(())
     }
 
@@ -76,6 +79,59 @@ impl Command for AddCmd {
     }
 }
 
+
+
+
+pub struct GetCmd {
+    ent_name: String
+}
+
+
+impl GetCmd {
+    pub fn new(ent_name: String) -> Self {
+        GetCmd{ent_name}
+    }
+}
+
+
+impl Command for GetCmd {
+
+    fn execute(&self, context: &Context) -> Result<(), ErrorExecution> {
+        let res = match context.db.get_entry_by_name(&self.ent_name) {
+            Ok(val) => val,
+            Err(err) => match err {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    println!("No match for the given entry.");
+                    return Err(ErrorExecution::NoMatchingEntry);
+                },
+                _ => {
+                    println!("An error occurred: {}", err);
+                    return Err(ErrorExecution::Unknown);
+                }
+            }
+        };
+    
+        println!("{} {}", res.ent_name, res.password_hash);
+    
+        Ok(())
+    }
+
+    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+        if context.kgc.is_master_key_provided() {
+            println!("Master key is provided");
+        }
+        else {
+            println!("Master key is not provided");
+            return Err(ErrorValidation::UnprovidedMasterKey);
+        }
+        return Ok(())
+    }
+
+    fn display(&self) {
+        println!("Get command with entry name = {}", self.ent_name);
+        ()
+    }
+}
 
 pub struct InitCmd {
     // for now is emty 
@@ -88,16 +144,46 @@ impl InitCmd {
 
 }
 
-
 impl Command for InitCmd {
     fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
         
+
+        let master_pwd  = rpassword::prompt_password("type a master password ==> ").unwrap();
+        let master_pwd_confirmed = rpassword::prompt_password("type the master password again ==> ").unwrap();
+
+        if master_pwd != master_pwd_confirmed {
+            return Err(ErrorExecution::PasswordMismatch);
+        }
+
+        let salt:String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(16)
+            .map(char::from)
+            .collect();
+
+        println!("{salt}");
+        println!("{master_pwd}");
+
+        println!("kgc = {:?}", context.kgc);
+        context.kgc.set_salt(salt);
+        println!("kgc = {:?}", context.kgc);
+
+
+
         Ok(())
     }
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
 
-        // if init command is used when already someconfig exists throw an erro
+        // somthing like already provided master key should be handeled;
+
+        // if context.kgc.is_master_key_provided() {
+        //     println!("Master key is provided");
+        // }
+        // else {
+        //     println!("Master key is not provided");
+        //     return Err(ErrorValidation::UnprovidedMasterKey);
+        // }
         return Ok(())
     }
 
