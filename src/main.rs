@@ -5,13 +5,8 @@ mod utils;
 mod db;
 mod context;
 
-use std::fs;
-use std::env;
-use std::path::PathBuf;
-use std::process::exit;
 use clap::{Parser, Subcommand};
 use cli::cli::{AddCmd, InitCmd, GetCmd, Command};
-use config::Config::KoflGlobalConfig;
 use context::Context;
 
 #[derive(Parser)]

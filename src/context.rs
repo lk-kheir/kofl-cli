@@ -1,5 +1,5 @@
 use crate::config::Config::KoflGlobalConfig;
-use crate::db::Db::{Database, Entry};
+use crate::db::Db::Database;
 use rusqlite::Error;
 use std::cell::RefCell;
 

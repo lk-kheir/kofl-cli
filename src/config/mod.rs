@@ -1,6 +1,6 @@
 pub mod Config {
 
-    use crate::utils::Utils::{check_existing_config, get_config_path, get_home_dir};
+    use crate::utils::Utils::{check_existing_config, get_home_dir};
     use serde::{Deserialize, Serialize};
     use std::env;
     use std::fs;
@@ -61,7 +61,7 @@ pub mod Config {
         }
 
         pub fn load(&mut self) {
-            if (check_existing_config()) {
+            if check_existing_config() {
                 println!("config file exists");
                 match self.read_config_from_toml_file() {
                     Ok(config) => {

@@ -7,15 +7,13 @@ use chrono::prelude::*;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
-use hex::encode;
 
-use hex::decode;
 
 use aes::cipher::{
-    KeyIvInit, StreamCipher, StreamCipherSeek,
+    KeyIvInit, StreamCipher,
     generic_array::GenericArray,
 };
-use ctr::{Ctr32BE, Ctr64BE};
+use ctr::Ctr32BE;
 type Aes256Ctr = Ctr32BE<aes::Aes256>;
 
 

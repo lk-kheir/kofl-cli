@@ -2,7 +2,7 @@
 pub mod Db {
     use rusqlite::{params, Connection, Result};
     use std::path::PathBuf;
-    use rusqlite::Error;
+    
 
 
     #[warn(unused_variables)]
