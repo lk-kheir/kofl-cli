@@ -15,6 +15,7 @@ pub mod Config {
         user_id: String,
         username: String,
         salt: String,
+        hashed_pwd: String,
         master_key_provided: bool
     }
 
@@ -31,6 +32,7 @@ pub mod Config {
                     Err(_) => String::from("user_12234"),
                 },
                 salt: String::from(""),
+                hashed_pwd: String::from(""),
                 master_key_provided: false
             }
         }
@@ -43,6 +45,13 @@ pub mod Config {
             self.salt = salt_val.clone();
         }
 
+        pub fn set_hashed_password(&mut self, hash_val: String) {
+            self.hashed_pwd = hash_val.clone();
+        }
+
+        pub fn set_master_key_provided(&mut self, is_set: bool) {
+            self.master_key_provided = true;
+        }
         pub fn is_master_key_provided(&self) -> bool {
             self.master_key_provided
         }
@@ -64,6 +73,10 @@ pub mod Config {
                 println!("config file does not exists");
                 self.write_config_to_toml_file();
             }
+        }
+
+        pub fn update(&self)  {
+            self.write_config_to_toml_file();
         }
 
         fn serialize_to_toml(&self) -> String {

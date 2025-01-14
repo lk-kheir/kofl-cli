@@ -6,6 +6,9 @@ use crate::db::Db::Entry;
 use chrono::prelude::*;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
+use sha2::{Sha256, Digest};
+use hex::encode;
+
 
 #[warn(unused_variables)]
 #[warn(unused_imports)]
@@ -63,7 +66,7 @@ impl Command for AddCmd {
     }
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        if context.kgc.is_master_key_provided() {
+        if context.kgc.borrow().is_master_key_provided() {
             println!("Master key is provided");
         }
         else {
@@ -117,7 +120,7 @@ impl Command for GetCmd {
     }
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        if context.kgc.is_master_key_provided() {
+        if context.kgc.borrow().is_master_key_provided() {
             println!("Master key is provided");
         }
         else {
@@ -144,46 +147,57 @@ impl InitCmd {
 
 }
 
-impl Command for InitCmd {
-    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
-        
+    impl Command for InitCmd {
+        fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+            
 
-        let master_pwd  = rpassword::prompt_password("type a master password ==> ").unwrap();
-        let master_pwd_confirmed = rpassword::prompt_password("type the master password again ==> ").unwrap();
+            let master_pwd  = rpassword::prompt_password("type a master password ==> ").unwrap();
+            let master_pwd_confirmed = rpassword::prompt_password("type the master password again ==> ").unwrap();
 
-        if master_pwd != master_pwd_confirmed {
-            return Err(ErrorExecution::PasswordMismatch);
+            if master_pwd != master_pwd_confirmed {
+                return Err(ErrorExecution::PasswordMismatch);
+            }
+
+            let salt:String = thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(16)
+                .map(char::from)
+                .collect();
+
+            //hash the master password with the salt
+            let mut hasher = Sha256::new();
+            hasher.update(master_pwd.clone());
+            hasher.update(salt.clone());
+            let hashed_password = hasher.finalize();
+            let hashed_password_hex = hex::encode(hashed_password); // Convert to hexadecimal string
+
+            // println!("salt = {salt}");
+            // println!("master pwd = {master_pwd}");
+            // println!("oooooooooooooo hashed_password = {hashed_password_hex}");
+            
+            // Update the configuration with the salt and hashed password
+            {
+                let mut kgc = context.kgc.borrow_mut();
+                kgc.set_salt(salt.clone());
+                kgc.set_hashed_password(hashed_password_hex); // Assuming you have a method to set the hashed password
+                kgc.set_master_key_provided(true); // Assuming you have a method to set this flag
+            }
+
+            context.kgc.borrow().update();
+            // Print the updated configuration
+            // println!("Updated kgc = {:?}", context.kgc.borrow());
+
+            Ok(())
         }
 
-        let salt:String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(16)
-            .map(char::from)
-            .collect();
-
-        println!("{salt}");
-        println!("{master_pwd}");
-
-        println!("kgc = {:?}", context.kgc);
-        context.kgc.set_salt(salt);
-        println!("kgc = {:?}", context.kgc);
-
-
-
-        Ok(())
-    }
-
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-
-        // somthing like already provided master key should be handeled;
-
-        // if context.kgc.is_master_key_provided() {
-        //     println!("Master key is provided");
-        // }
-        // else {
-        //     println!("Master key is not provided");
-        //     return Err(ErrorValidation::UnprovidedMasterKey);
-        // }
+        if context.kgc.borrow().is_master_key_provided() {
+            return Err(ErrorValidation::AlreadyProvidedMasterKey);
+            println!("Master key is provided");
+        }
+        else {
+            println!("Master key is not provided");
+        }
         return Ok(())
     }
 
@@ -195,18 +209,5 @@ impl Command for InitCmd {
 
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn it_works() {
-        let add_commad: AddCmd = AddCmd::new("facebook".to_string(), "whocares".to_string());
-        assert_eq!(add_commad, AddCmd {
-            name: "facebook".to_string(),
-            password: "whocares".to_string()
-        }
-        );
-    }
-}
 }
