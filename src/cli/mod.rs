@@ -9,6 +9,15 @@ use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
 use hex::encode;
 
+use hex::decode;
+
+use aes::cipher::{
+    KeyIvInit, StreamCipher, StreamCipherSeek,
+    generic_array::GenericArray,
+};
+use ctr::{Ctr32BE, Ctr64BE};
+type Aes256Ctr = Ctr32BE<aes::Aes256>;
+
 
 #[warn(unused_variables)]
 #[warn(unused_imports)]
@@ -51,28 +60,51 @@ impl fmt::Debug for AddCmd {
 
 impl Command for AddCmd {
     fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
-
-        let new_entry = Entry {
-            id: 0 as u32, // wil be ignored by sqlite
-            ent_name: self.name.clone(),
-            password_hash: self.password.clone(),
-            timestamp: Utc::now().to_rfc3339()
-
+        let master_key_hash = {
+            let kgc = context.kgc.borrow();
+            kgc.get_master_key_hash()
         };
 
-        context.db.add_entry(new_entry).unwrap();
+        // Decode the master key hash from hex
+        let master_key_bytes = hex::decode(&master_key_hash)
+            .map_err(|_| ErrorExecution::EncryptionError)?;
 
-        Ok(())   
+        // Create key and nonce
+        let key = GenericArray::from_slice(&master_key_bytes);
+        let nonce = GenericArray::from_slice(&[0u8; 16]); // In production, use secure random nonce
+
+        // Initialize cipher
+        let mut cipher = Aes256Ctr::new(key, nonce);
+
+        // Encrypt the password
+        let mut encrypted_password = self.password.clone().into_bytes();
+        cipher.apply_keystream(&mut encrypted_password);
+
+        // Convert to hex for storage
+        let encrypted_password_hex = hex::encode(encrypted_password);
+
+        // Create new entry
+        let new_entry = Entry {
+            id: 0, // will be ignored by sqlite
+            ent_name: self.name.clone(),
+            password_hash: encrypted_password_hex,
+            timestamp: Utc::now().to_rfc3339()
+        };
+
+        context.db.add_entry(new_entry)
+            .map_err(|_| ErrorExecution::DatabaseError)?;
+
+        Ok(())
     }
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        if context.kgc.borrow().is_master_key_provided() {
-            println!("Master key is provided");
-        }
-        else {
-            println!("Master key is not provided");
-            return Err(ErrorValidation::UnprovidedMasterKey);
-        }
+        // if context.kgc.borrow().is_master_key_provided() {
+        //     return Err(ErrorValidation::AlreadyProvidedMasterKey);
+        //     println!("Master key is provided");
+        // }
+        // else {
+        //     println!("Master key is not provided");
+        // }
         return Ok(())
     }
 
@@ -100,24 +132,45 @@ impl GetCmd {
 impl Command for GetCmd {
 
     fn execute(&self, context: &Context) -> Result<(), ErrorExecution> {
-        let res = match context.db.get_entry_by_name(&self.ent_name) {
-            Ok(val) => val,
-            Err(err) => match err {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    println!("No match for the given entry.");
-                    return Err(ErrorExecution::NoMatchingEntry);
-                },
-                _ => {
-                    println!("An error occurred: {}", err);
-                    return Err(ErrorExecution::Unknown);
-                }
-            }
+        let entry = context.db.get_entry_by_name(&self.ent_name)
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => ErrorExecution::NoMatchingEntry,
+                _ => ErrorExecution::Unknown,
+            })?;
+
+        // Get master key hash
+        let master_key_hash = {
+            let kgc = context.kgc.borrow();
+            kgc.get_master_key_hash()
         };
-    
-        println!("{} {}", res.ent_name, res.password_hash);
-    
+
+        // Decode the master key
+        let master_key_bytes = hex::decode(&master_key_hash)
+            .map_err(|_| ErrorExecution::DecryptionError)?;
+
+        // Create key and nonce
+        let key = GenericArray::from_slice(&master_key_bytes);
+        let nonce = GenericArray::from_slice(&[0u8; 16]); // Must match the nonce used in AddCmd
+
+        // Initialize cipher
+        let mut cipher = Aes256Ctr::new(key, nonce);
+
+        // Decode the stored encrypted password
+        let mut encrypted_password = hex::decode(&entry.password_hash)
+            .map_err(|_| ErrorExecution::DecryptionError)?;
+
+        // Decrypt
+        cipher.apply_keystream(&mut encrypted_password);
+
+        // Convert to string
+        let decrypted_password = String::from_utf8(encrypted_password)
+            .map_err(|_| ErrorExecution::DecryptionError)?;
+
+        println!("Entry Name: {}", entry.ent_name);
+        println!("Password: {}", decrypted_password);
+
         Ok(())
-    }
+    }   
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
         if context.kgc.borrow().is_master_key_provided() {
@@ -179,7 +232,7 @@ impl InitCmd {
             {
                 let mut kgc = context.kgc.borrow_mut();
                 kgc.set_salt(salt.clone());
-                kgc.set_hashed_password(hashed_password_hex); // Assuming you have a method to set the hashed password
+                kgc.set_master_key_hash(hashed_password_hex); // Assuming you have a method to set the hashed password
                 kgc.set_master_key_provided(true); // Assuming you have a method to set this flag
             }
 

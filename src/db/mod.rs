@@ -1,7 +1,12 @@
+#[warn(non_snake_case)]
 pub mod Db {
     use rusqlite::{params, Connection, Result};
     use std::path::PathBuf;
     use rusqlite::Error;
+
+
+    #[warn(unused_variables)]
+    #[warn(unused_imports)]
 
     pub struct Database {
         pub connection: Connection

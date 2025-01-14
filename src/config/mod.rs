@@ -6,7 +6,8 @@ pub mod Config {
     use std::fs;
     use std::path::PathBuf;
     use toml;
-    
+    #[warn(unused_variables)]
+    #[warn(unused_imports)]
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct KoflGlobalConfig {
@@ -45,8 +46,11 @@ pub mod Config {
             self.salt = salt_val.clone();
         }
 
-        pub fn set_hashed_password(&mut self, hash_val: String) {
+        pub fn set_master_key_hash(&mut self, hash_val: String) {
             self.hashed_pwd = hash_val.clone();
+        }
+        pub fn get_master_key_hash(&self) -> String {
+            self.hashed_pwd.clone()
         }
 
         pub fn set_master_key_provided(&mut self, is_set: bool) {

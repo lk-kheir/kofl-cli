@@ -31,6 +31,9 @@ pub enum ErrorExecution {
     NoMatchingEntry,
     PasswordMismatch,
     Unknown,
+    DecryptionError,
+    EncryptionError,
+    DatabaseError
 }
 
 impl From<io::Error> for ErrorExecution {
@@ -46,6 +49,10 @@ impl fmt::Display for ErrorExecution {
             ErrorExecution::Unknown => write!(f, "Something unexpected happened during execution."),
             ErrorExecution::NoMatchingEntry => write!(f, "No matching entry found."),
             ErrorExecution::PasswordMismatch => write!(f, "unmatching passwords."),
+            ErrorExecution::DecryptionError => write!(f, "DecryptionError occured."),
+            ErrorExecution::EncryptionError => write!(f, "EncryptionError occured."),
+            ErrorExecution::DatabaseError => write!(f, "DatabaseError occured."),
+
         }
     }
 }
