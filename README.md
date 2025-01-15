@@ -31,79 +31,79 @@ Kofl (Arabic words means Lock) Project is a Rust-based application designed to m
 
 #### Security
 
-- [x] Implement password complexity requirements and validation
-- [x] Add timeout/auto-lock feature
-- [x] Rate limiting for failed master password attempts
-- [x] Two-factor authentication support
+- [ ] Implement password complexity requirements and validation
+- [ ] Add timeout/auto-lock feature
+- [ ] Rate limiting for failed master password attempts
+- [ ] Two-factor authentication support
 
 #### Core Features
 
-- [x] Comprehensive logging system
-- [x] Backup/restore functionality
-- [x] Integration tests
-- [x] Proper error recovery mechanisms
+- [ ] Comprehensive logging system
+- [ ] Backup/restore functionality
+- [ ] Integration tests
+- [ ] Proper error recovery mechanisms
 
 
 ### Medium Priority 🟡
 
 #### User Experience
 
-- [x] Password strength meter
-- [x] Password expiration notifications
-- [x] Clipboard integration with auto-clear
-- [x] Command aliases and tab completion
+- [ ] Password strength meter
+- [ ] Password expiration notifications
+- [ ] Clipboard integration with auto-clear
+- [ ] Command aliases and tab completion
 
 #### Data Management:
 
-- [x] Categories/folders for password entries
-- [x] Search functionality
-- [x] Import/export capabilities
-- [x] Password history tracking
+- [ ] Categories/folders for password entries
+- [ ] Search functionality
+- [ ] Import/export capabilities
+- [ ] Password history tracking
 
 #### Architecture:
 
-- [x] Database migrations
-- [x] Configuration management improvements
-- [x] Transaction support
-- [x] State management refactoring
+- [ ] Database migrations
+- [ ] Configuration management improvements
+- [ ] Transaction support
+- [ ] State management refactoring
 
 
 ### Low Priority 🟢
 
 #### Advanced Features:
-- [x] Browser integration
-- [x] Secure password sharing
-- [x] File attachment support
-- [x] Emergency access protocol
+- [ ] Browser integration
+- [ ] Secure password sharing
+- [ ] File attachment support
+- [ ] Emergency access protocol
 
 #### Quality of Life:
-- [x] Interactive mode
-- [x] Configuration profiles
-- [x] Bulk operations support
-- [x] Plugin system
+- [ ] Interactive mode
+- [ ] Configuration profiles
+- [ ] Bulk operations support
+- [ ] Plugin system
 
 
 ## Current Improvements in Progress
 
 ### Code Quality
 
-- [x] Enhancing error handling with descriptive messages
-- [x] Expanding test coverage
-- [x] Implementing comprehensive logging
-- [x] Code refactoring for maintainability
+- [ ] Enhancing error handling with descriptive messages
+- [ ] Expanding test coverage
+- [ ] Implementing comprehensive logging
+- [ ] Code refactoring for maintainability
 
 ### Performance
 
-- [x] Query optimization
-- [x] Resource usage improvements
-- [x] Caching implementation
+- [ ] Query optimization
+- [ ] Resource usage improvements
+- [ ] Caching implementation
 
 ### Documentation
 
-- [x] API documentation
-- [x] Usage examples
-- [x] Development guidelines
-- [x] API documentation
+- [ ] API documentation
+- [ ] Usage examples
+- [ ] Development guidelines
+- [ ] API documentation
 
 
 ## Tech Stack
