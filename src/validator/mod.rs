@@ -29,30 +29,26 @@ pub mod validator {
     struct EntryExistsValidator {}
     struct DuplicateEntryValidator {}
 
+    impl Validator for RateLimitValidator {
+        fn validate(&self, context: &Context) -> ValidationResult {
+            ValidationResult::Success
+        }
+    }
     impl Validator for MasterKeyValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            // Your implementation here
             ValidationResult::Success
         }
     }
 
-    impl Validator for RateLimitValidator {
-        fn validate(&self, context: &Context) -> ValidationResult {
-            // Your implementation here
-            ValidationResult::Success
-        }
-    }
 
     impl Validator for EntryExistsValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            // Your implementation here
             ValidationResult::Success
         }
     }
 
     impl Validator for DuplicateEntryValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            // Your implementation here
             ValidationResult::Success
         }
     }
@@ -64,10 +60,10 @@ pub mod validator {
     impl ValidationRegistry {
         pub fn new() -> Self {
             let mut validators = HashMap::new();
-            validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}));
-            validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}));
-            validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}));
-            validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}));
+            validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}) as Box<dyn Validator>);
+            validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}) as Box<dyn Validator>);
+            validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}) as Box<dyn Validator>);
+            validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}) as Box<dyn Validator>);
             
             Self { validators }
         }

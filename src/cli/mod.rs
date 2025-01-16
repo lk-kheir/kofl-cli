@@ -7,6 +7,9 @@ use chrono::prelude::*;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
+use crate::validator::validator::ValidationRegistry;
+use crate::validator::validator::ValidationType;
+use crate::validator::validator::ValidationResult;
 
 
 use aes::cipher::{

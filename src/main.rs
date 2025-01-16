@@ -4,6 +4,7 @@ mod config;
 mod utils;
 mod db;
 mod context;
+mod validator;
 
 use clap::{Parser, Subcommand};
 use cli::cli::{AddCmd, InitCmd, GetCmd, Command};

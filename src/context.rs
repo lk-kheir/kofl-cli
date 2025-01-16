@@ -6,9 +6,8 @@ use std::cell::RefCell;
 #[warn(unused_variables)]
 #[warn(unused_imports)]
 pub struct Context {
-    pub kgc: RefCell<KoflGlobalConfig>,  // Corrected the syntax here
+    pub kgc: RefCell<KoflGlobalConfig>,
     pub db: Database,
-    // You can add more state here
 }
 
 impl Context {
