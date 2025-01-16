@@ -59,7 +59,7 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
 #[warn(unused_imports)]
 fn main() -> () {
     let context = Context::new().unwrap();
-    println!("kgc = {:?}", context.kgc);
+    // println!("kgc = {:?}", context.kgc);
 
     let cli = Cli::parse();
 

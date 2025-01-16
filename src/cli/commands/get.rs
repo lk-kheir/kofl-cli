@@ -10,6 +10,7 @@ use sha2::{Sha256, Digest};
 use crate::validator::validator::ValidationRegistry;
 use crate::validator::validator::ValidationType;
 use crate::validator::validator::ValidationResult;
+use crate::validator::validator::CommandType;
 
 
 use aes::cipher::{
@@ -76,13 +77,14 @@ impl Command for GetCmd {
     }   
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        if context.kgc.borrow().is_master_key_provided() {
-            println!("Master key is provided");
-        }
-        else {
-            println!("Master key is not provided");
-            return Err(ErrorValidation::UnprovidedMasterKey);
-        }
+
+        let val_reg = ValidationRegistry::new(CommandType::GET_CMD);
+
+        val_reg.validators.get(&ValidationType::MasterKeyCheck).unwrap().validate(context);
+        val_reg.validators.get(&ValidationType::RateLimitCheck).unwrap().validate(context);
+        val_reg.validators.get(&ValidationType::EntryExistsCheck).unwrap().validate(context);
+        val_reg.validators.get(&ValidationType::DuplicateEntryCheck).unwrap().validate(context);
+
         return Ok(())
     }
 

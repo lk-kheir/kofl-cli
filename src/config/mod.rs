@@ -62,11 +62,9 @@ pub mod Config {
 
         pub fn load(&mut self) {
             if check_existing_config() {
-                println!("config file exists");
                 match self.read_config_from_toml_file() {
                     Ok(config) => {
                         *self = config;
-                        println!("Config loaded successfully");
                     }
                     Err(e) => {
                         println!("Failed to load config: {}", e);
