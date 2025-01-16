@@ -6,8 +6,11 @@ mod db;
 mod context;
 mod validator;
 
+// Updated imports for the commands
 use clap::{Parser, Subcommand};
-use cli::cli::{AddCmd, InitCmd, GetCmd, Command};
+// Import commands from the new location
+use cli::commands::{AddCmd, GetCmd, InitCmd};  // Updated path
+use cli::Command;  // Import the Command trait from cli module
 use context::Context;
 
 #[derive(Parser)]
