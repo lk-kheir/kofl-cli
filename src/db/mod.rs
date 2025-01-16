@@ -1,4 +1,3 @@
-#[warn(non_snake_case)]
 pub mod Db {
     use rusqlite::{params, Connection, Result};
     use std::path::PathBuf;

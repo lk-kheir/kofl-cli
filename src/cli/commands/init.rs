@@ -1,21 +1,12 @@
 use crate::cli::Command;
-use std::fmt;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
-use crate::db::Db::Entry;
-use chrono::prelude::*;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
-use crate::validator::validator::ValidationRegistry;
-use crate::validator::validator::ValidationType;
-use crate::validator::validator::ValidationResult;
 
 
-use aes::cipher::{
-    KeyIvInit, StreamCipher,
-    generic_array::GenericArray,
-};
+use aes::cipher::KeyIvInit;
 use ctr::Ctr32BE;
 type Aes256Ctr = Ctr32BE<aes::Aes256>;
 

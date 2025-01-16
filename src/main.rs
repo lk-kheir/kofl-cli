@@ -5,6 +5,7 @@ mod utils;
 mod db;
 mod context;
 mod validator;
+mod session;
 
 // Updated imports for the commands
 use clap::{Parser, Subcommand};

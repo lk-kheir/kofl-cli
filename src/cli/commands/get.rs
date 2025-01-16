@@ -1,15 +1,9 @@
 use crate::cli::Command;
-use std::fmt;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
-use crate::db::Db::Entry;
-use chrono::prelude::*;
-use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
-use sha2::{Sha256, Digest};
+use sha2::Digest;
 use crate::validator::validator::ValidationRegistry;
 use crate::validator::validator::ValidationType;
-use crate::validator::validator::ValidationResult;
 use crate::validator::validator::CommandType;
 
 

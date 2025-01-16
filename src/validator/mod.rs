@@ -27,7 +27,7 @@ pub mod validator {
     }
 
     pub trait Validator {
-        fn validate(&self, context: &Context) -> ValidationResult;
+        fn validate(&self, _context: &Context) -> ValidationResult;
     }
     
     struct MasterKeyValidator {}

@@ -4,12 +4,7 @@ use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
 use crate::db::Db::Entry;
 use chrono::prelude::*;
-use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
-use sha2::{Sha256, Digest};
-use crate::validator::validator::ValidationRegistry;
-use crate::validator::validator::ValidationType;
-use crate::validator::validator::ValidationResult;
+use sha2::Digest;
 
 
 use aes::cipher::{
@@ -87,7 +82,7 @@ impl Command for AddCmd {
         Ok(())
     }
 
-    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+    fn validate(&self, _context: &Context) -> Result<(), ErrorValidation>  {
         // if context.kgc.borrow().is_master_key_provided() {
         //     return Err(ErrorValidation::AlreadyProvidedMasterKey);
         //     println!("Master key is provided");
