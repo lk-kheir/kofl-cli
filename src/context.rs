@@ -2,11 +2,13 @@ use crate::config::Config::KoflGlobalConfig;
 use crate::db::Db::Database;
 use rusqlite::Error;
 use std::cell::RefCell;
+use crate::Session;
 
 #[warn(unused_variables)]
 #[warn(unused_imports)]
 pub struct Context {
     pub kgc: RefCell<KoflGlobalConfig>,
+    pub ss: Session,
     pub db: Database,
 }
 
@@ -31,7 +33,18 @@ impl Context {
         // Initialize the database schema
         let _ = dbase.initialize();
 
+
+        let mut s  = Session::new();
+        s.load();
+  
+        // if (s.check_if_expired()) {
+        //     println!("session expired run cargo login");
+        // }else {
+        //     println!("session still valid");
+        // }
+
+
         // Return the new Context
-        Ok(Context { kgc: c, db: dbase })
+        Ok(Context { kgc: c, db: dbase, ss: s })
     }
 }

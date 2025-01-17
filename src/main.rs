@@ -68,9 +68,7 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
 fn main() -> () {
     let context = Context::new().unwrap();
     println!("{:?}", context.kgc);
-    let ss  = Session::new();
-    println!("{:?}", ss);
-
+    println!("{:?}", context.ss);
     let cli = Cli::parse();
 
     match &cli.command { 

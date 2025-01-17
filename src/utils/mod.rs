@@ -30,6 +30,14 @@ pub mod Utils {
         false
     }
 
+    pub fn check_existing_session_config() -> bool {
+        if let Some(home_dir) = get_home_dir() {
+            // println!("home dir = {:?}", home_dir.join(".kofl"));
+            return fs::exists(home_dir.join(".kofl_session")).unwrap();
+        }
+        false
+    }
+
     
     #[cfg(test)]
     mod tests {

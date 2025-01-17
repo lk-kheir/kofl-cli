@@ -3,7 +3,7 @@
 pub mod session {
     use std::env::home_dir;
     use std::fmt::Debug;
-    use crate::utils::Utils::{check_existing_config, get_home_dir};
+    use crate::utils::Utils::{check_existing_session_config, get_home_dir};
     use serde::{Deserialize, Serialize};
     use std::env;
     use std::fs;
@@ -52,6 +52,9 @@ pub mod session {
     impl Session {        
        
         pub fn new() -> Self {
+
+            // 
+
             let now = Utc::now();
             let home_dir = get_home_dir().expect("Home directory not found");
             Session {
@@ -63,33 +66,33 @@ pub mod session {
                     .collect(),
                 user_login: String::from("lk-kheir"), // this should be retrieved from env var USER look to config.rs
                 created_at: now,
-                expires_at: now + chrono::Duration::minutes(15),  // 15 hard coded whould later from some sort of config
+                expires_at: now + chrono::Duration::minutes(1),  // 15 hard coded whould later from some sort of config
                 last_activity: now,
                 is_active: true 
             }
         }
 
 
-        // pub fn load(&mut self) {
-        //     if check_existing_config() {
-        //         match self.read_config_from_toml_file() {
-        //             Ok(config) => {
-        //                 *self = config;
-        //             }
-        //             Err(e) => {
-        //                 println!("Failed to load config: {}", e);
-        //                 // Handle error, e.g., use default values or exit
-        //             }
-        //         }
-        //     } else {
-        //         println!("config file does not exists");
-        //         self.write_config_to_toml_file();
-        //     }
-        // }
+        pub fn load(&mut self) {
+            if check_existing_session_config() {
+                match self.read_config_from_toml_file() {
+                    Ok(config) => {
+                        *self = config;
+                    }
+                    Err(e) => {
+                        println!("Failed to load session config: {}", e);
+                        // Handle error, e.g., use default values or exit
+                    }
+                }
+            } else {
+                println!("Session config file does not exists");
+                self.write_session_config_to_toml_file();
+            }
+        }
 
-        // pub fn update(&self) {
-        //     self.write_config_to_toml_file();
-        // }
+        pub fn update(&self) {
+            self.write_session_config_to_toml_file();
+        }
 
         fn serialize_to_toml(&self) -> String {
             toml::to_string(self).expect("could not serialize struct into toml string")
@@ -113,33 +116,10 @@ pub mod session {
         }
 
 
-        fn is_valid(&self) {
-            todo!();
-        }
+        pub fn check_if_expired(&self) -> bool {
+            // compare current itme with self.expires_at 
 
-        fn refresh(&self) {
-            todo!();
-        }
-
-        fn expire(&self) {
-            todo!();
-        }
-
-        fn save(&self) {
-            todo!();
-        }
-
-
-        fn validate_user(&self) {
-            todo!();
-        }
-
-        fn check_expiry(&self) {
-            todo!();
-        }
-
-        fn update_last_activity(&self) {
-            todo!();
+            self.expires_at < Utc::now()
         }
 
     }
