@@ -1,3 +1,6 @@
+#![allow(warnings)]
+
+
 mod cli;
 mod errors;
 mod config;
@@ -10,9 +13,13 @@ mod session;
 // Updated imports for the commands
 use clap::{Parser, Subcommand};
 // Import commands from the new location
-use cli::commands::{AddCmd, GetCmd, InitCmd};  // Updated path
+use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd};  // Updated path
 use cli::Command;  // Import the Command trait from cli module
 use context::Context;
+
+use crate::session::session::Session;
+
+
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -23,11 +30,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Init { },
+    Login {},
     Add {
         name: String,
         password: String,
     },
-    Init { },
     Get {
         ent_name: String
     }
@@ -56,11 +64,12 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
     }
 }
 
-#[warn(unused_variables)]
-#[warn(unused_imports)]
+
 fn main() -> () {
     let context = Context::new().unwrap();
-    // println!("kgc = {:?}", context.kgc);
+    println!("{:?}", context.kgc);
+    let ss  = Session::new();
+    println!("{:?}", ss);
 
     let cli = Cli::parse();
 
@@ -77,5 +86,10 @@ fn main() -> () {
             let get_command = GetCmd::new(ent_name.to_string());
             execute_command(&get_command, &context);
         }
+        Commands::Login {} => {
+            let login_command = LogInCmd::new();
+            execute_command(&login_command, &context);
+
+        } 
     }
 }

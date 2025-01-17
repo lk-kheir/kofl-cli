@@ -3,13 +3,12 @@ pub mod Config {
     use crate::utils::Utils::{check_existing_config, get_home_dir};
     use serde::{Deserialize, Serialize};
     use std::env;
+    use std::fmt::Debug;
     use std::fs;
     use std::path::PathBuf;
     use toml;
-    #[warn(unused_variables)]
-    #[warn(unused_imports)]
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize)]
     pub struct KoflGlobalConfig {
         config_path: PathBuf,
         data_storage_path: PathBuf,
@@ -17,7 +16,7 @@ pub mod Config {
         username: String,
         salt: String,
         hashed_pwd: String,
-        master_key_provided: bool
+        master_key_provided: bool,
     }
 
     impl KoflGlobalConfig {
@@ -34,7 +33,7 @@ pub mod Config {
                 },
                 salt: String::from(""),
                 hashed_pwd: String::from(""),
-                master_key_provided: false
+                master_key_provided: false,
             }
         }
 
@@ -77,7 +76,7 @@ pub mod Config {
             }
         }
 
-        pub fn update(&self)  {
+        pub fn update(&self) {
             self.write_config_to_toml_file();
         }
 
@@ -99,6 +98,49 @@ pub mod Config {
             let toml_str = fs::read_to_string(config_pth)?;
             let config: KoflGlobalConfig = toml::from_str(&toml_str)?;
             Ok(config)
+        }
+    
+    
+    
+    }
+
+    impl Debug for KoflGlobalConfig {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(
+                f,
+                "\nKofl Global Configuration:\n\
+             ├─ User Info:\n\
+             │  ├─ Username: {}\n\
+             │  └─ User ID: {}\n\
+             ├─ Paths:\n\
+             │  ├─ Config: {}\n\
+             │  └─ Storage: {}\n\
+             ├─ Security:\n\
+             │  ├─ Master Key Set: {}\n\
+             │  ├─ Salt Present: {}\n\
+             │  └─ Password Hash: {}\n\
+             └─ Status: {}\n",
+                self.username,
+                self.user_id,
+                self.config_path.display(),
+                self.data_storage_path.display(),
+                if self.master_key_provided {
+                    "Yes"
+                } else {
+                    "No"
+                },
+                if !self.salt.is_empty() { "Yes" } else { "No" },
+                if !self.hashed_pwd.is_empty() {
+                    "Set"
+                } else {
+                    "Not Set"
+                },
+                if self.master_key_provided {
+                    "Configured"
+                } else {
+                    "Needs Setup"
+                }
+            )
         }
     }
 }
