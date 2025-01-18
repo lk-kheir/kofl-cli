@@ -17,8 +17,6 @@ use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd};  // Updated path
 use cli::Command;  // Import the Command trait from cli module
 use context::Context;
 
-use crate::session::session::Session;
-
 
 
 #[derive(Parser)]
@@ -69,6 +67,7 @@ fn main() -> () {
     let context = Context::new().unwrap();
     println!("{:?}", context.kgc);
     println!("{:?}", context.ss);
+    return;
     let cli = Cli::parse();
 
     match &cli.command { 
