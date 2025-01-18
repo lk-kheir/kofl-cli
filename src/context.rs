@@ -4,6 +4,9 @@ use rusqlite::Error;
 use std::cell::RefCell;
 use crate::session::Session;
 use crate::session::SessionError;
+use log::{info, warn, error};
+use colored::*;
+use std::io::Write;
 
 #[warn(unused_variables)]
 #[warn(unused_imports)]
@@ -26,7 +29,7 @@ impl Context {
         let dbase = match Database::new(c.borrow().get_data_storage_path()) {
             Ok(database) => database,
             Err(err) => {
-                eprintln!("error creating a connection to db: {}", err);
+                error!("Error creating a connection to db: {}", err);
                 return Err(err);
             }
         };
@@ -44,25 +47,25 @@ impl Context {
 
         match session.load() {
             Ok(_) => {
-                println!("Successfull file Loading");
+                info!("Successfully loaded the session file.");
             }
             Err(SessionError::SessionFileMissingError) => {
-                println!("Config session missing, Attempting to create a new one");
+                warn!("Session config file missing, creating a new session.");
                 session = Session::new(user_login);
                 session.write_session_config_to_toml_file();
             }
             Err(SessionError::FailedLoadingError) => {
-                println!("Failed to load the session details, Attempting to create a new one");
+                warn!("Failed to load the session details, creating a new session.");
                 session = Session::new(user_login);
                 session.write_session_config_to_toml_file();
             }
             Err(SessionError::ExpiredSession) => {
-                println!("Session expired, Attempting to create a new one");
+                warn!("Session expired, creating a new session.");
                 session = Session::new(user_login);
                 session.write_session_config_to_toml_file();
             }
             Err(_) => {
-                println!("No existing session, creating a new session.");
+                warn!("No existing session, creating a new session.");
                 session = Session::new(user_login);
                 session.write_session_config_to_toml_file();
             }

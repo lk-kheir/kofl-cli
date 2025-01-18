@@ -1,6 +1,5 @@
 #![allow(warnings)]
 
-
 mod cli;
 mod errors;
 mod config;
@@ -16,7 +15,10 @@ use clap::{Parser, Subcommand};
 use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd};  // Updated path
 use cli::Command;  // Import the Command trait from cli module
 use context::Context;
-
+use log::{info, warn, error};
+use env_logger::Env;
+use colored::*;
+use std::io::Write;
 
 
 #[derive(Parser)]
@@ -62,15 +64,37 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
     }
 }
 
+fn main() {
+    // Initialize the logger
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .format(|buf, record| {
+            let level = match record.level() {
+                log::Level::Error => "ERROR".red(),
+                log::Level::Warn => "WARN".yellow(),
+                log::Level::Info => "INFO".green(),
+                log::Level::Debug => "DEBUG".blue(),
+                log::Level::Trace => "TRACE".purple(),
+            };
+            writeln!(
+                buf,
+                "[{}] - {}:{}:{} - {}",
+                level,
+                record.module_path().unwrap_or("unknown_module"),
+                record.file().unwrap_or("unknown_file"),
+                record.line().unwrap_or(0),
+                record.args()
+            )
+        })
+        .init();
 
-fn main() -> () {
+
     let context = Context::new().unwrap();
-    println!("{:?}", context.kgc);
-    println!("{:?}", context.ss);
-    return;
+    info!("{:?}", context.kgc);
+    info!("{:?}", context.ss);
+
     let cli = Cli::parse();
 
-    match &cli.command { 
+    match &cli.command {
         Commands::Init {  } => {
             let init_command = InitCmd::new();
             execute_command(&init_command, &context);
@@ -86,7 +110,6 @@ fn main() -> () {
         Commands::Login {} => {
             let login_command = LogInCmd::new();
             execute_command(&login_command, &context);
-
-        } 
+        }
     }
 }
