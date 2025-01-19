@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 pub mod validator {
+    use log::{info, error};
+
     use super::*;
     use crate::context::Context;
 
@@ -37,28 +39,30 @@ pub mod validator {
 
     impl Validator for RateLimitValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            println!("Validator for RateLimitValidator ✅");
             ValidationResult::Success
         }
     }
+
     impl Validator for MasterKeyValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            println!("Validator for MasterKeyValidator ✅");
-            ValidationResult::Success
+            if (!context.kgc.borrow().is_master_key_provided())
+            {
+                ValidationResult::Success
+            }else {
+                ValidationResult::Failure("Master key not provided".to_string())
+            }
         }
     }
 
 
     impl Validator for EntryExistsValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            println!("Validator for EntryExistsValidator ✅");
             ValidationResult::Success
         }
     }
 
     impl Validator for DuplicateEntryValidator {
         fn validate(&self, context: &Context) -> ValidationResult {
-            println!("Validator for DuplicateEntryValidator ✅");
             ValidationResult::Success
         }
     }

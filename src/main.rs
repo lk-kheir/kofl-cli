@@ -55,10 +55,7 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
         }
         Err(val_err) => {
             match val_err {
-                errors::ErrorValidation::UnprovidedMasterKey => {
-                    eprintln!("Please provide a master key");
-                }
-                _ => eprintln!("Validation error: {}", val_err)
+                _ => {}
             }
         }
     }

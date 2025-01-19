@@ -1,8 +1,9 @@
 use crate::cli::Command;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
+use log::{error, info, warn};
 use sha2::Digest;
-use crate::validator::validator::ValidationRegistry;
+use crate::validator::validator::{ValidationRegistry, ValidationResult};
 use crate::validator::validator::ValidationType;
 use crate::validator::validator::CommandType;
 
@@ -74,11 +75,27 @@ impl Command for GetCmd {
 
         let val_reg = ValidationRegistry::new(CommandType::GET_CMD);
 
-        val_reg.validators.get(&ValidationType::MasterKeyCheck).unwrap().validate(context);
-        val_reg.validators.get(&ValidationType::RateLimitCheck).unwrap().validate(context);
-        val_reg.validators.get(&ValidationType::EntryExistsCheck).unwrap().validate(context);
-        val_reg.validators.get(&ValidationType::DuplicateEntryCheck).unwrap().validate(context);
+        let val_checks = vec![
+            ValidationType::MasterKeyCheck,
+            ValidationType::RateLimitCheck,
+            ValidationType::EntryExistsCheck,
+            ValidationType::DuplicateEntryCheck
+        ];
 
+
+        for a_check in val_checks {
+
+            match val_reg.validators.get(&a_check).unwrap().validate(context) {
+                ValidationResult::Failure(msg) => {
+                    error!("{msg}");
+                    return Err(ErrorValidation::Temp);
+                },
+                ValidationResult::Warning(msg) => warn!("{msg}"),
+                _ => info!("test passed")
+
+            }
+        }
+        
         return Ok(())
     }
 
