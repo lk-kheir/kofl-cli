@@ -79,6 +79,13 @@ pub mod Db {
             Ok(())
         }
 
+        pub fn entry_exist(&self, ent_name: String) -> Result<(bool), rusqlite::Error> {
+            let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM entry WHERE ent_name = ?1")?;
+            let count: i32 = stmt.query_row(params![ent_name], |row| row.get(0))?;
+            Ok(count > 0)
+
+        }
+
         pub fn list_entries(&self) -> Result<Vec<Entry>, rusqlite::Error> {
             let mut stmt = self.connection.prepare("SELECT id, ent_name, password_hash, timestamp FROM entry")?;
             let entry_iter = stmt.query_map([], |row| {

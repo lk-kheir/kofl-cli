@@ -14,7 +14,7 @@ use aes::cipher::{
 use ctr::Ctr32BE;
 type Aes256Ctr = Ctr32BE<aes::Aes256>;
 pub struct AddCmd {
-    name: String,
+    pub name: String,
     password: String,
 }
 

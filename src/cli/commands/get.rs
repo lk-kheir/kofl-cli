@@ -17,7 +17,7 @@ type Aes256Ctr = Ctr32BE<aes::Aes256>;
 
 
 pub struct GetCmd {
-    ent_name: String
+    pub ent_name: String
 }
 
 
@@ -73,24 +73,25 @@ impl Command for GetCmd {
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
 
-        let val_reg = ValidationRegistry::new(CommandType::GET_CMD);
+        let val_reg = ValidationRegistry::<GetCmd>::new();
 
         let val_checks = vec![
             ValidationType::MasterKeyCheck,
-            ValidationType::RateLimitCheck,
+            // ValidationType::RateLimitCheck,
             ValidationType::EntryExistsCheck,
-            ValidationType::DuplicateEntryCheck
+            // ValidationType::DuplicateEntryCheck
         ];
 
 
         for a_check in val_checks {
 
-            match val_reg.validators.get(&a_check).unwrap().validate(context) {
+            match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
                 ValidationResult::Failure(msg) => {
                     error!("{msg}");
                     return Err(ErrorValidation::Temp);
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
+                
                 _ => info!("test passed")
 
             }

@@ -4,7 +4,7 @@ pub mod validator {
     use log::{info, error};
 
     use super::*;
-    use crate::context::Context;
+    use crate::{context::Context, cli::commands::{GetCmd, AddCmd, InitCmd}};
 
     #[derive(Hash, Eq, PartialEq, Clone)]
     pub enum ValidationType {
@@ -27,92 +27,110 @@ pub mod validator {
         Failure(String),
         Warning(String),
     }
-
-    pub trait Validator {
-        fn validate(&self, _context: &Context) -> ValidationResult;
+    pub trait Validator<T> {
+        fn validate(&self, _context: &Context, cmd: &T) -> ValidationResult;
     }
     
     struct MasterKeyValidator {}
     struct RateLimitValidator {}
     struct EntryExistsValidator {}
     struct DuplicateEntryValidator {}
-
-    impl Validator for RateLimitValidator {
-        fn validate(&self, context: &Context) -> ValidationResult {
+    
+    impl<T> Validator<T> for RateLimitValidator {
+        fn validate(&self, context: &Context, cmd: &T) -> ValidationResult {
+            info!("Validator for RateLimitValidator ✅");
             ValidationResult::Success
         }
     }
-
-    impl Validator for MasterKeyValidator {
-        fn validate(&self, context: &Context) -> ValidationResult {
-            if (!context.kgc.borrow().is_master_key_provided())
-            {
+    
+    impl<T> Validator<T> for MasterKeyValidator {
+        fn validate(&self, context: &Context, cmd: &T) -> ValidationResult {
+            info!("Validate Master key");
+            if context.kgc.borrow().is_master_key_provided() {
+                info!("Master key provided");
                 ValidationResult::Success
-            }else {
+            } else {
+                error!("Master key Not provided");
                 ValidationResult::Failure("Master key not provided".to_string())
             }
         }
     }
+    
+    impl<> Validator<GetCmd> for EntryExistsValidator {
+        fn validate(&self, context: &Context, cmd: &GetCmd) -> ValidationResult {
+            info!("Validator for EntryExistsValidator ✅");
+            match context.db.entry_exist(cmd.ent_name.clone())
+            {
+                Ok(res) => if res {
+                    ValidationResult::Success
+                } else {
+                    ValidationResult::Failure("No entry found with similar name".to_string())
+                }
+                Err(err) => {
+                    ValidationResult::Failure("Error during in db ".to_string())
 
-
-    impl Validator for EntryExistsValidator {
-        fn validate(&self, context: &Context) -> ValidationResult {
-            ValidationResult::Success
-        }
-    }
-
-    impl Validator for DuplicateEntryValidator {
-        fn validate(&self, context: &Context) -> ValidationResult {
-            ValidationResult::Success
-        }
-    }
-
-    pub struct ValidationRegistry {
-        pub validators: HashMap<ValidationType, Box<dyn Validator>>,
-    }
-
-    impl ValidationRegistry {
-        pub fn new(cmdType: CommandType) -> Self {
-            let mut validators = HashMap::new();
-            
-            match cmdType {
-                CommandType::GET_CMD => {
-                    validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}) as Box<dyn Validator>);
-                },
-                CommandType::ADD_CMD => {
-                    validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}) as Box<dyn Validator>);
-                },
-                CommandType::INIT_CMD => {
-                    validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}) as Box<dyn Validator>);
-                    validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}) as Box<dyn Validator>);
                 }
             }
-            
+        }
+    }
+
+    impl<> Validator<AddCmd> for EntryExistsValidator {
+        fn validate(&self, context: &Context, cmd: &AddCmd) -> ValidationResult {
+            info!("Validator for EntryExistsValidator ✅");
+
+            match context.db.entry_exist(cmd.name.clone())
+            {
+                Ok(res) => if res {
+                    ValidationResult::Failure("Master key not provided".to_string())
+                } else {
+                     ValidationResult::Success
+                }
+                Err(err) => {
+                    ValidationResult::Failure("Master key not provided".to_string())
+
+                }
+            }
+        }
+    }
+    
+    impl<T> Validator<T> for DuplicateEntryValidator {
+        fn validate(&self, context: &Context, cmd: &T) -> ValidationResult {
+            info!("Validator for DuplicateEntryValidator");
+            ValidationResult::Success
+        }
+    }
+    
+    pub struct ValidationRegistry<T> {
+        pub validators: HashMap<ValidationType, Box<dyn Validator<T>>>,
+    }
+    
+    impl ValidationRegistry<GetCmd> {
+        pub fn new() -> Self {
+            let mut validators = HashMap::new();
+            validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}) as Box<dyn Validator<GetCmd>>);
+            validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}) as Box<dyn Validator<GetCmd>>);
+            validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}) as Box<dyn Validator<GetCmd>>);
+            validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}) as Box<dyn Validator<GetCmd>>);
             Self { validators }
         }
-
-        // pub fn validate_all(&self, required_validations: Vec<ValidationType>, context: &Context) -> Vec<ValidationResult> {
-        //     required_validations
-        //         .iter()
-        //         .filter_map(|val_type| {
-        //             self.validators
-        //                 .get(val_type)
-        //                 .map(|validator| validator.validate(context))
-        //         })
-        //         .collect()
-        // }
-
-        // // Optional helper method to register new validators
-        // pub fn register(&mut self, val_type: ValidationType, validator: Box<dyn Validator>) {
-        //     self.validators.insert(val_type, validator);
-        // }
     }
+    
+    impl ValidationRegistry<AddCmd> {
+        pub fn new() -> Self {
+            let mut validators = HashMap::new();
+            validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}) as Box<dyn Validator<AddCmd>>);
+            validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}) as Box<dyn Validator<AddCmd>>);
+            validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}) as Box<dyn Validator<AddCmd>>);
+            validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}) as Box<dyn Validator<AddCmd>>);
+            Self { validators }
+        }
+    }
+    
+    impl ValidationRegistry<InitCmd> {
+        pub fn new() -> Self {
+            let mut validators = HashMap::new();
+            Self { validators }
+        }
+    }
+    
 }
