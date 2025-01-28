@@ -6,6 +6,9 @@ use sha2::Digest;
 use crate::validator::validator::{ValidationRegistry, ValidationResult};
 use crate::validator::validator::ValidationType;
 use crate::validator::validator::CommandType;
+use arboard::{Clipboard};
+use arboard::Error as ClipboardError;
+
 
 
 use aes::cipher::{
@@ -65,9 +68,24 @@ impl Command for GetCmd {
         let decrypted_password = String::from_utf8(encrypted_password)
             .map_err(|_| ErrorExecution::DecryptionError)?;
 
-        println!("Entry Name: {}", entry.ent_name);
-        println!("Password: {}", decrypted_password);
+        // println!("Entry Name: {}", entry.ent_name);
+        // println!("Password: {}", decrypted_password);
 
+        let mut clipboard = Clipboard::new().unwrap();
+       
+
+        // let the_string = "Hello, world!";
+        match clipboard.set_text(decrypted_password) {
+            Ok(_) => info!("Password is copied to clipboard"),
+            Err(ClipboardError::ClipboardNotSupported) => error!("Your system does not support clibboard."),
+            Err(ClipboardError::ContentNotAvailable) => error!("Content not available"),
+            Err(ClipboardError::ClipboardOccupied) => error!("Clipboard is occupied"),
+            Err(ClipboardError::ConversionFailure) => error!("Conversion failure should not happen as we retrieve utf-8 strings not images"),
+            Err(ClipboardError::Unknown{description}) => error!("{}", description),
+            Err(_) => error!("undefined behaviour"),
+        }
+        
+        println!("Clipboard text was: {}", clipboard.get_text().unwrap());
         Ok(())
     }   
 
@@ -77,9 +95,7 @@ impl Command for GetCmd {
 
         let val_checks = vec![
             ValidationType::MasterKeyCheck,
-            // ValidationType::RateLimitCheck,
             ValidationType::EntryExistsCheck,
-            // ValidationType::DuplicateEntryCheck
         ];
 
 
