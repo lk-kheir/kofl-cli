@@ -1,5 +1,27 @@
 use std::fmt::{self};
 use std::io;
+
+#[derive(Debug)]
+pub enum ErrorSetup {
+    Session,
+    DataBase,
+}
+
+
+
+
+impl fmt::Display for ErrorSetup {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        match self {
+            ErrorSetup::Session => write!(f, "Session set up failed"),
+            ErrorSetup::DataBase => write!(f, "DataBase set up failed")
+        }
+        
+    }
+}
+
+
 pub enum ErrorValidation {
     EmptyName,
     LongName,

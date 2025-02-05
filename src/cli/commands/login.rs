@@ -23,9 +23,9 @@ impl LogInCmd {
 }
 
 impl Command for LogInCmd {
-        fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
             Ok(())
-        }
+    }
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
         Ok(())

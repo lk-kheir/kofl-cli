@@ -95,6 +95,7 @@ impl Command for GetCmd {
 
         let val_checks = vec![
             ValidationType::MasterKeyCheck,
+            ValidationType::SessionCheck,
             ValidationType::EntryExistsCheck,
         ];
 
@@ -107,8 +108,7 @@ impl Command for GetCmd {
                     return Err(ErrorValidation::Temp);
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                
-                _ => info!("test passed")
+                _ => info!("test passed ✅")
 
             }
         }

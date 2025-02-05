@@ -1,25 +1,25 @@
 #![allow(warnings)]
 
 mod cli;
-mod errors;
 mod config;
-mod utils;
-mod db;
 mod context;
-mod validator;
+mod db;
+mod errors;
 mod session;
+mod utils;
+mod validator;
 
 // Updated imports for the commands
 use clap::{Parser, Subcommand};
 // Import commands from the new location
-use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd};  // Updated path
-use cli::Command;  // Import the Command trait from cli module
-use context::Context;
-use log::{info, warn, error};
-use env_logger::Env;
+use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd}; // Updated path
+use cli::Command; // Import the Command trait from cli module
 use colored::*;
+use context::Context;
+use env_logger::Env;
+use log::{error, info, warn};
 use std::io::Write;
-
+use std::process;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -30,34 +30,25 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Init { },
+    Init {},
     Login {},
-    Add {
-        name: String,
-        password: String,
-    },
-    Get {
-        ent_name: String
-    }
+    Add { name: String, password: String },
+    Get { ent_name: String },
 }
 
 fn execute_command<T: Command>(cmd: &T, context: &Context) {
     match cmd.validate(context) {
-        Ok(_) => {
-            match cmd.execute(context) {
-                Ok(_) => {
-                    cmd.display();
-                }
-                Err(exec_err) => {
-                    eprintln!("Error during execution: {}", exec_err);
-                }
+        Ok(_) => match cmd.execute(context) {
+            Ok(_) => {
+                cmd.display();
             }
-        }
-        Err(val_err) => {
-            match val_err {
-                _ => {}
+            Err(exec_err) => {
+                eprintln!("Error during execution: {}", exec_err);
             }
-        }
+        },
+        Err(val_err) => match val_err {
+            _ => {}
+        },
     }
 }
 
@@ -84,23 +75,29 @@ fn main() {
         })
         .init();
 
+    let context = match Context::new() {
+        Err(_) => {
+            error!("Program terminated due to setup issues");
+            process::exit(1);
+        }
+        Ok(context) => context,
+    };
 
-    let context = Context::new().unwrap();
     info!("{:?}", context.kgc);
     info!("{:?}", context.ss);
 
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Init {  } => {
+        Commands::Init {} => {
             let init_command = InitCmd::new();
             execute_command(&init_command, &context);
-        },
+        }
         Commands::Add { name, password } => {
             let add_command = AddCmd::new(name.to_string(), password.to_string());
             execute_command(&add_command, &context);
-        },
-        Commands::Get { ent_name  } => {
+        }
+        Commands::Get { ent_name } => {
             let get_command = GetCmd::new(ent_name.to_string());
             execute_command(&get_command, &context);
         }

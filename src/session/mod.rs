@@ -59,31 +59,25 @@ impl Session {
                 .collect(),
             user_login,
             created_at: now,
-            expires_at: now + chrono::Duration::seconds(20),
+            expires_at: now + chrono::Duration::seconds(10),
             last_activity: now,
             is_active: true
         }
     }
 
     pub fn load(&mut self) -> Result<(), SessionError> {
-        // println!("calling load");
         if check_existing_session_config() {
             match self.read_config_from_toml_file() {
                 Ok(config) => {
-                    // println!("Ok(Session) read_config_from_toml_file");
                     *self = config; // mutating the self with Session  serialized
                     if self.check_if_expired() {
-                        // println!("check_if_expire returning expired");
                         return Err(SessionError::ExpiredSession);
                     }
-                    // println!("check_if_expire returning non expired updating now last activity");
                     self.last_activity = Utc::now();
                     self.update();
                     Ok(())
                 }
                 Err(e) => {
-                    // println!("Err(Session) read_config_from_toml_file");
-                    // println!("Failed to load session config: {}", e);
                     Err(SessionError::FailedLoadingError)
                 }
             }
