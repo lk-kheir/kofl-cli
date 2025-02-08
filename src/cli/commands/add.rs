@@ -47,7 +47,7 @@ impl Command for AddCmd {
     fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
         let master_key_hash = {
             let kgc = context.kgc.borrow();
-            kgc.get_master_key_hash()
+            kgc.get_hashed_pwd()
         };
 
         // Decode the master key hash from hex

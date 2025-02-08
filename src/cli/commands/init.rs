@@ -25,7 +25,6 @@ impl InitCmd {
 impl Command for InitCmd {
         fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
             
-
             let master_pwd  = rpassword::prompt_password("type a master password ==> ").unwrap();
             let master_pwd_confirmed = rpassword::prompt_password("type the master password again ==> ").unwrap();
 

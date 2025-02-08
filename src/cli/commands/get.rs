@@ -43,7 +43,7 @@ impl Command for GetCmd {
         // Get master key hash
         let master_key_hash = {
             let kgc = context.kgc.borrow();
-            kgc.get_master_key_hash()
+            kgc.get_hashed_pwd()
         };
 
         // Decode the master key

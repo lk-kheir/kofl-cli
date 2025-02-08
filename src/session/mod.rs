@@ -59,7 +59,7 @@ impl Session {
                 .collect(),
             user_login,
             created_at: now,
-            expires_at: now + chrono::Duration::seconds(10),
+            expires_at: now + chrono::Duration::seconds(20),
             last_activity: now,
             is_active: true
         }

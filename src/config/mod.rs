@@ -45,10 +45,18 @@ pub mod Config {
             self.salt = salt_val.clone();
         }
 
+        pub fn get_salt(&self) -> String{
+            self.salt.clone()
+        }
+
+        pub fn get_user_login(&self) -> String {
+            self.username.clone()
+        }
+
         pub fn set_master_key_hash(&mut self, hash_val: String) {
             self.hashed_pwd = hash_val.clone();
         }
-        pub fn get_master_key_hash(&self) -> String {
+        pub fn get_hashed_pwd(&self) -> String {
             self.hashed_pwd.clone()
         }
 

@@ -63,14 +63,14 @@ impl Context {
             Err(SessionError::ExpiredSession) => {
                 warn!("Session expired");
                 // if the session is expired we should ask the user to login again.
-                return Err(ErrorSetup::Session);
+                // return Err(ErrorSetup::Session);
                 // session = Session::new(user_login);
                 // session.write_session_config_to_toml_file();
             }
             Err(_) => {
-                warn!("No existing session, creating a new session.");
-                session = Session::new(user_login);
-                session.write_session_config_to_toml_file();
+                // warn!("No existing session, creating a new session.");
+                // session = Session::new(user_login);
+                // session.write_session_config_to_toml_file();
             }
         }
 

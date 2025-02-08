@@ -57,7 +57,8 @@ pub enum ErrorExecution {
     Unknown,
     DecryptionError,
     EncryptionError,
-    DatabaseError
+    DatabaseError,
+    AuthenticationFailed
 }
 
 impl From<io::Error> for ErrorExecution {
@@ -76,6 +77,7 @@ impl fmt::Display for ErrorExecution {
             ErrorExecution::DecryptionError => write!(f, "DecryptionError occured."),
             ErrorExecution::EncryptionError => write!(f, "EncryptionError occured."),
             ErrorExecution::DatabaseError => write!(f, "DatabaseError occured."),
+            ErrorExecution::AuthenticationFailed => write!(f, "Authentication failed."),
 
         }
     }
