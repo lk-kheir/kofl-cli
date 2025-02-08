@@ -3,9 +3,8 @@ use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
 use log::{error, info, warn};
 use sha2::Digest;
-use crate::validator::validator::{ValidationRegistry, ValidationResult};
-use crate::validator::validator::ValidationType;
-use crate::validator::validator::CommandType;
+use crate::validator::core::{CommandType, ValidationResult, ValidationType};
+use crate::validator::registry::ValidationRegistry;
 use arboard::{Clipboard};
 use arboard::Error as ClipboardError;
 
