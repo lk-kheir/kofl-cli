@@ -2,7 +2,9 @@ use crate::cli::Command;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
 use crate::session::Session;
-use log::info;
+use crate::validator::core::{ValidationResult, ValidationType};
+use crate::validator::registry::ValidationRegistry;
+use log::{error, info, warn};
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
@@ -55,18 +57,39 @@ impl Command for LogInCmd {
         new_session.write_session_config_to_toml_file();
     
     
-        println!("Login successful! New session created.");
+        info!("Login successful! New session created.");
     
         Ok(())
     }
     
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        Ok(())
+        let val_reg = ValidationRegistry::<LogInCmd>::new();
+
+        let val_checks = vec![
+            // ValidationType::MasterKeyCheck,
+            ValidationType::SessionCheck,
+        ];
+
+
+        for a_check in val_checks {
+
+            match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
+                ValidationResult::Failure(msg) => {
+                    error!("{msg}");
+                    return Err(ErrorValidation::Temp);
+                },
+                ValidationResult::Warning(msg) => warn!("{msg}"),
+                _ => info!("test passed ✅")
+
+            }
+        }
+        
+        return Ok(())
     }
 
     fn display(&self) {
-        println!("Login Command");
+        info!("Login Command");
         ()
     }
 }

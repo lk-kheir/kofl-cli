@@ -116,7 +116,7 @@ impl Command for GetCmd {
     }
 
     fn display(&self) {
-        println!("Get command with entry name = {}", self.ent_name);
+        info!("Get command with entry name = {}", self.ent_name);
         ()
     }
 }

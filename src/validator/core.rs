@@ -2,7 +2,7 @@ use crate::context::Context;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum ValidationType {
-    SessionCheck,
+    SessionCheck, // this should be equivelant to loggedIn for now.
     MasterKeyCheck,
     RateLimitCheck,
     EntryExistsCheck,
@@ -14,6 +14,7 @@ pub enum CommandType {
     GET_CMD,
     ADD_CMD,
     INIT_CMD,
+    LOGIN_CMD
 }
 
 #[derive(Debug)]

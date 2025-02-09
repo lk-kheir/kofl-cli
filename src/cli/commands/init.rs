@@ -4,6 +4,7 @@ use crate::context::Context;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
+use log::{error, info, warn};
 
 
 use aes::cipher::KeyIvInit;
@@ -66,11 +67,11 @@ impl Command for InitCmd {
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
         if context.kgc.borrow().is_master_key_provided() {
+            info!("Master key is already provided skipping init phase");
             return Err(ErrorValidation::AlreadyProvidedMasterKey);
-            println!("Master key is provided");
         }
         else {
-            println!("Master key is not provided");
+            error!("Master key is not provided");
         }
         return Ok(())
     }

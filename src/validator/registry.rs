@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use crate::validator::core::{ValidationType, Validator};
-use crate::cli::commands::{GetCmd, AddCmd, InitCmd};
+use crate::cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd};
 
 use crate::validator::master_key::MasterKeyValidator;
 use crate::validator::session::SessionValidator;
@@ -12,6 +12,21 @@ use crate::validator::duplicate::DuplicateEntryValidator;
 
 pub struct ValidationRegistry<T> {
     pub validators: HashMap<ValidationType, Box<dyn Validator<T>>>,
+}
+
+impl ValidationRegistry<InitCmd> {
+    pub fn new() -> Self {
+        let mut validators:  HashMap<ValidationType, Box<dyn Validator<InitCmd>>> = HashMap::new();
+        Self { validators }
+    }
+}
+
+impl ValidationRegistry<LogInCmd> {
+    pub fn new() -> Self {
+        let mut validators: HashMap<ValidationType, Box<dyn Validator<LogInCmd>>> = HashMap::new();
+        validators.insert(ValidationType::SessionCheck, Box::new(SessionValidator {}));
+        Self { validators }
+    }
 }
 
 impl ValidationRegistry<GetCmd> {
@@ -37,9 +52,3 @@ impl ValidationRegistry<AddCmd> {
     }
 }
 
-impl ValidationRegistry<InitCmd> {
-    pub fn new() -> Self {
-        let validators = HashMap::new();
-        Self { validators }
-    }
-}

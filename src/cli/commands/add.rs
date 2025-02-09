@@ -4,6 +4,7 @@ use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
 use crate::db::Db::Entry;
 use chrono::prelude::*;
+use log::info;
 use sha2::Digest;
 
 
@@ -94,7 +95,7 @@ impl Command for AddCmd {
     }
 
     fn display(&self) {
-        println!("Add command with name = {}, password = {}", self.name, self.password);
+        info!("Add command with name = {}", self.name);
         ()
     }
 }
