@@ -1,13 +1,14 @@
 use crate::cli::Command;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
-use crate::session::Session;
 use crate::validator::core::{ValidationResult, ValidationType};
 use crate::validator::registry::ValidationRegistry;
-use log::{error, info, warn};
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
+use rusqlite::config;
 use sha2::{Sha256, Digest};
+use log::{error, info, warn};
+use std::fs;
 
 
 use aes::cipher::KeyIvInit;
@@ -15,21 +16,23 @@ use ctr::Ctr32BE;
 type Aes256Ctr = Ctr32BE<aes::Aes256>;
 
 
-pub struct LogInCmd {
+pub struct DestroyCmd {
     // for now is emty 
 }
 
-impl LogInCmd {
+impl DestroyCmd {
     pub fn new() -> Self {
-        LogInCmd{}
-    }   
+        DestroyCmd{}
+    }
 
 }
 
-impl Command for LogInCmd {
-
-
-    fn execute(&self, context: &Context) -> Result<(), ErrorExecution> {
+impl Command for DestroyCmd {
+    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+        warn!(
+        "Note this is will delete all your data!!, Backup if needed
+        ");
+        
         let master_pwd_input = rpassword::prompt_password("Enter the master password ===> ").unwrap();
 
         let salt = context.kgc.borrow().get_salt();
@@ -48,26 +51,34 @@ impl Command for LogInCmd {
         if computed_hash_hex != stored_hash {
             return Err(ErrorExecution::AuthenticationFailed);
         }
-    
-        
 
-        let user_login = context.kgc.borrow().get_user_login().clone();
-        let new_session = Session::new(user_login);
+        // retrieve all config path and session path
+
+        let binding = context.kgc.borrow();
+        let data_path = binding.get_data_storage_path();
+        let config_path = binding.get_config_path();
+        let session_path = context.ss.get_session_path();
         
-        new_session.write_session_config_to_toml_file();
-    
-    
-        info!("Login successful! New session created.");
-    
+        // println!("{}", data_path.display());
+        // println!("{}", config_path.display());
+        // println!("{}", session_path.display());
+
+        // remove the db;
+        fs::remove_file(data_path)?;
+        fs::remove_file(config_path)?;
+        fs::remove_file(session_path)?;
+
+        info!("\nAll data related to Kofl configuration have been deleted.\nRun init to start again");
+
         Ok(())
     }
-    
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        let val_reg = ValidationRegistry::<LogInCmd>::new();
+        
+        let val_reg = ValidationRegistry::<DestroyCmd>::new();
 
         let val_checks = vec![
-            ValidationType::MasterKeyCheck,
+            // ValidationType::MasterKeyCheck,
             ValidationType::SessionCheck,
         ];
 
@@ -89,7 +100,7 @@ impl Command for LogInCmd {
     }
 
     fn display(&self) {
-        info!("Login Command");
+        info!("Destroy Command");
         ()
     }
 }

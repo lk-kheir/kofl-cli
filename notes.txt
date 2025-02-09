@@ -1,0 +1,3 @@
+to fix:
+    not allow automatic creation of a session if no master key is provided
+    run destory then add ent_name with pwd

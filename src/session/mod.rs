@@ -59,10 +59,15 @@ impl Session {
                 .collect(),
             user_login,
             created_at: now,
-            expires_at: now + chrono::Duration::seconds(20),
+            expires_at: now + chrono::Duration::seconds(600),
             last_activity: now,
             is_active: true
         }
+    }
+
+
+    pub fn get_session_path(&self) -> &PathBuf {
+       &self.session_path
     }
 
     pub fn load(&mut self) -> Result<(), SessionError> {

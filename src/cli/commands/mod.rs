@@ -2,8 +2,9 @@ mod add;
 mod get;
 mod init;
 mod login;
-
+mod destroy;
 pub use add::AddCmd;
 pub use get::GetCmd;
 pub use init::InitCmd;
 pub use login::LogInCmd;
+pub use destroy::DestroyCmd;

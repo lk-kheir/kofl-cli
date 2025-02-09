@@ -41,6 +41,10 @@ pub mod Config {
             &self.data_storage_path
         }
 
+        pub fn get_config_path<'a>(&'a self) -> &'a PathBuf {
+            &self.config_path
+        }
+
         pub fn set_salt(&mut self, salt_val: String) {
             self.salt = salt_val.clone();
         }

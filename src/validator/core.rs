@@ -14,7 +14,8 @@ pub enum CommandType {
     GET_CMD,
     ADD_CMD,
     INIT_CMD,
-    LOGIN_CMD
+    LOGIN_CMD,
+    DESTROY_CMD,
 }
 
 #[derive(Debug)]

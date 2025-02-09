@@ -12,7 +12,7 @@ mod validator;
 // Updated imports for the commands
 use clap::{Parser, Subcommand};
 // Import commands from the new location
-use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd}; // Updated path
+use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd, DestroyCmd}; // Updated path
 use cli::Command; // Import the Command trait from cli module
 use colored::*;
 use context::Context;
@@ -32,6 +32,7 @@ struct Cli {
 enum Commands {
     Init {},
     Login {},
+    Destroy {},
     Add { name: String, password: String },
     Get { ent_name: String },
 }
@@ -43,7 +44,7 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
                 cmd.display();
             }
             Err(exec_err) => {
-                eprintln!("Error during execution: {}", exec_err);
+                error!("Error during execution: {}", exec_err);
             }
         },
         Err(val_err) => match val_err {
@@ -104,6 +105,10 @@ fn main() {
         Commands::Login {} => {
             let login_command = LogInCmd::new();
             execute_command(&login_command, &context);
+        }
+        Commands::Destroy {  } => {
+            let destroy_command = DestroyCmd::new();
+            execute_command(&destroy_command, &context);
         }
     }
 }
