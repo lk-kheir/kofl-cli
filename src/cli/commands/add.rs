@@ -1,10 +1,12 @@
 use crate::cli::Command;
+use crate::validator::core::{ValidationType, ValidationResult};
+use crate::validator::registry::ValidationRegistry;
 use std::fmt;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
 use crate::db::Db::Entry;
 use chrono::prelude::*;
-use log::info;
+use log::{info, warn, error};
 use sha2::Digest;
 
 
@@ -83,14 +85,29 @@ impl Command for AddCmd {
         Ok(())
     }
 
-    fn validate(&self, _context: &Context) -> Result<(), ErrorValidation>  {
-        // if context.kgc.borrow().is_master_key_provided() {
-        //     return Err(ErrorValidation::AlreadyProvidedMasterKey);
-        //     println!("Master key is provided");
-        // }
-        // else {
-        //     println!("Master key is not provided");
-        // }
+    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+        
+        let val_reg = ValidationRegistry::<AddCmd>::new();
+
+        let val_checks = vec![
+            ValidationType::MasterKeyCheck,
+            ValidationType::SessionCheck,
+            ValidationType::EntryExistsCheck,
+        ];
+
+
+        for a_check in val_checks {
+
+            match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
+                ValidationResult::Failure(msg) => {
+                    error!("{msg}");
+                    return Err(ErrorValidation::Temp);
+                },
+                ValidationResult::Warning(msg) => warn!("{msg}"),
+                _ => info!("test passed ✅")
+
+            }
+        }
         return Ok(())
     }
 

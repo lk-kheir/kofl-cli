@@ -53,6 +53,7 @@ impl ValidationRegistry<GetCmd> {
 impl ValidationRegistry<AddCmd> {
     pub fn new() -> Self {
         let mut validators: HashMap<ValidationType, Box<dyn Validator<AddCmd>>> = HashMap::new();
+        validators.insert(ValidationType::SessionCheck, Box::new(SessionValidator {}));
         validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}));
         validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}));
         validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}));
