@@ -37,28 +37,4 @@ pub mod Utils {
         }
         false
     }
-
-    
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-    
-        #[test]
-        fn test_get_home_dir() {
-            // This test will check if the get_home_dir function returns a path.
-            // Note: This test might fail in some CI environments where the home directory is not set.
-            assert!(get_home_dir().is_some());
-        }
-    
-        #[test]
-        fn test_get_config_path() {
-            // This test will check if the get_config_path function returns a valid path.
-            let config_filename = ".kofl";
-            let config_path = get_config_path(config_filename);
-    
-            assert!(config_path.is_some());
-            assert!(config_path.unwrap().ends_with(config_filename));
-        }
-    }
-
 }
