@@ -1,3 +1,54 @@
-to fix:
-    not allow automatic creation of a session if no master key is provided
-    run destory then add ent_name with pwd
+Phase 1: Security First (Immediate)
+
+Address the Master Key/Session Issue:
+Problem: The notes.txt file mentions not allowing automatic session creation without a master key. This is a HUGE vulnerability.
+Fix: Immediately prevent session creation if a master key hasn't been properly initialized and validated. The application should require the user to set up a master key before anything else.
+Code: Modify src/context.rs and potentially src/session.rs to enforce this.
+Validation: Write a test case to ensure a session cannot be created without a valid master key.
+Nonce Handling:
+Problem: The hardcoded nonce in AddCmd makes your encryption completely insecure.
+Fix: Generate a unique, random nonce for each password. Store the nonce alongside the encrypted password in the database.
+Code: Modify src/cli/commands/add.rs and src/db/mod.rs to handle nonce generation and storage.
+Validation: Add a test to verify that different passwords get different nonces and that decryption still works correctly with the stored nonce.
+Master Password Verification in DestroyCmd:
+Problem: Single password confirmation for data deletion is risky.
+Fix: Implement a double confirmation mechanism. Ask the user to type "DELETE" or something similar to confirm their intent.
+Code: Modify src/cli/commands/destroy.rs.
+Validation: Test that the destroy command only proceeds with the confirmation.
+Phase 2: Validation and Error Handling (High Priority)
+
+Refine Validation Logic:
+Problem: ValidationResult::Warning is confusing.
+Fix: Remove ValidationResult::Warning. Make validations strictly pass/fail. If you need to provide feedback, do it through a separate logging mechanism.
+Code: Modify src/validator/core.rs and all validators that use ValidationResult::Warning.
+Validation: Ensure all validation checks now have clear pass/fail outcomes.
+Implement the DuplicateEntryValidator:
+Problem: The validator does nothing.
+Fix: Implement the logic to check if an entry with the given name already exists in the database before adding a new one.
+Code: Modify src/validator/duplicate.rs and potentially src/db/mod.rs.
+Validation: Add a test to verify that the validator prevents duplicate entries.
+Improve Error Handling:
+Problem: Inconsistent error handling (e.g., doing nothing on success in DestroyCmd).
+Fix: Ensure that every function returns a Result and that errors are properly handled and logged. Don't ignore successful operations.
+Code: Review all functions for consistent error handling.
+Validation: Add tests to trigger error conditions and verify that they are handled gracefully.
+Phase 3: Code Quality and Refinement (Medium Priority)
+
+Address Typos and Naming:
+Problem: Typos like "DataBase" in src/errors.rs hurt credibility.
+Fix: Run a spell checker and fix all typos. Use consistent naming conventions.
+Code: Review all code for typos and inconsistent naming.
+Code Documentation:
+Problem: Lack of documentation makes the code harder to understand.
+Fix: Add comments to explain the purpose of functions, structs, and important code sections.
+Code: Add documentation to all modules and functions.
+Configuration:
+Problem: magic strings and values
+Fix: load all magic values and strings from the config file.
+Code: Modify src/config.rs and load all the values from there.
+Important Considerations:
+
+Testing: Write unit tests for everything. This is essential for a password manager. Use the tests to verify the correctness of your code and to prevent regressions.
+Security Audits: Once you've made these improvements, consider having a security professional review your code.
+User Experience: Think about how users will interact with your application. Make the CLI user-friendly and provide clear error messages.
+This roadmap is a starting point. Be prepared to adapt it as you learn more about security and Rust development. Good luck, and remember: security is a journey, not a destination!
