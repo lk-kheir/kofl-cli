@@ -4,7 +4,7 @@ use crate::context::Context;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 
 
 use aes::cipher::KeyIvInit;

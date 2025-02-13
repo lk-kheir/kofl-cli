@@ -1,5 +1,5 @@
 use assert_cmd::Command;
-use log::{error, info};
+use log::{debug, error, info};
 use std::{env, fs};
 use super::utils::get_home_dir;
 pub fn run_kofl_cmd(args: &[&str]) -> Command {

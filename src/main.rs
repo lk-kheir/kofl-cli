@@ -18,7 +18,7 @@ use cli::Command; // Import the Command trait from cli module
 use colored::*;
 use context::Context;
 use env_logger::{Env, Target};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use std::io::Write;
 use std::process;
 
@@ -34,7 +34,7 @@ enum Commands {
     Init {},
     Login {},
     Destroy {},
-    Add { name: String, password: String },
+    Add { name: String},
     Get { ent_name: String },
 }
 
@@ -56,7 +56,7 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
 
 fn main() {
     // Initialize the logger
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug"))
         .format(|buf, record| {
             let level = match record.level() {
                 log::Level::Error => "ERROR".red(),
@@ -86,8 +86,8 @@ fn main() {
         Ok(context) => context,
     };
 
-    info!("{:?}", context.kgc);
-    info!("{:?}", context.ss);
+    debug!("{:?}", context.kgc);
+    debug!("{:?}", context.ss);
 
     let cli = Cli::parse();
 
@@ -96,8 +96,9 @@ fn main() {
             let init_command = InitCmd::new();
             execute_command(&init_command, &context);
         }
-        Commands::Add { name, password } => {
-            let add_command = AddCmd::new(name.to_string(), password.to_string());
+        Commands::Add { name} => {
+            let pwd = rpassword::prompt_password("Enter the password for the entry ===> ").unwrap();
+            let add_command = AddCmd::new(name.to_string(), pwd);
             execute_command(&add_command, &context);
         }
         Commands::Get { ent_name } => {

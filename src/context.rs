@@ -5,7 +5,7 @@ use rusqlite::Error;
 use std::cell::RefCell;
 use crate::session::Session;
 use crate::session::SessionError;
-use log::{info, warn, error};
+use log::{debug, info, warn, error};
 use colored::*;
 use std::io::Write;
 

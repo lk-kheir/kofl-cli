@@ -6,7 +6,7 @@ use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
 use crate::db::Db::Entry;
 use chrono::prelude::*;
-use log::{info, warn, error};
+use log::{debug, info, warn, error};
 use sha2::Digest;
 
 

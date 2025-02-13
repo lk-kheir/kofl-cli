@@ -1,7 +1,7 @@
 use crate::cli::Command;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use sha2::Digest;
 use crate::validator::core::{CommandType, ValidationResult, ValidationType};
 use crate::validator::registry::ValidationRegistry;

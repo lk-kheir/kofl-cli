@@ -4,7 +4,7 @@ use crate::context::Context;
 use crate::session::Session;
 use crate::validator::core::{ValidationResult, ValidationType};
 use crate::validator::registry::ValidationRegistry;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};

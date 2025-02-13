@@ -7,7 +7,7 @@ use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use rusqlite::config;
 use sha2::{Sha256, Digest};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use std::fs;
 
 
