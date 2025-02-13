@@ -17,7 +17,7 @@ use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd, DestroyCmd}; // Updated p
 use cli::Command; // Import the Command trait from cli module
 use colored::*;
 use context::Context;
-use env_logger::Env;
+use env_logger::{Env, Target};
 use log::{error, info, warn};
 use std::io::Write;
 use std::process;
@@ -75,6 +75,7 @@ fn main() {
                 record.args()
             )
         })
+        .target(Target::Stdout)
         .init();
 
     let context = match Context::new() {

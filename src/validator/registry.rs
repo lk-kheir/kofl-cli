@@ -33,6 +33,7 @@ impl ValidationRegistry<LogInCmd> {
 impl ValidationRegistry<DestroyCmd> {
     pub fn new() -> Self {
         let mut validators: HashMap<ValidationType, Box<dyn Validator<DestroyCmd>>> = HashMap::new();
+        validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}));
         validators.insert(ValidationType::SessionCheck, Box::new(SessionValidator {}));
         Self { validators }
     }

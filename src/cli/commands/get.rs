@@ -84,7 +84,7 @@ impl Command for GetCmd {
             Err(_) => error!("undefined behaviour"),
         }
         
-        println!("Clipboard text was: {}", clipboard.get_text().unwrap());
+        // println!("Clipboard text was: {}", clipboard.get_text().unwrap());
         Ok(())
     }   
 

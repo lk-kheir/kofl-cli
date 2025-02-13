@@ -78,7 +78,7 @@ impl Command for DestroyCmd {
         let val_reg = ValidationRegistry::<DestroyCmd>::new();
 
         let val_checks = vec![
-            // ValidationType::MasterKeyCheck,
+            ValidationType::MasterKeyCheck,
             ValidationType::SessionCheck,
         ];
 
