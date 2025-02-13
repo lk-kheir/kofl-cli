@@ -29,7 +29,7 @@ impl LogInCmd {
 impl Command for LogInCmd {
 
 
-    fn execute(&self, context: &Context) -> Result<(), ErrorExecution> {
+    fn execute(&self, context: &Context) -> bool {
         let master_pwd_input = rpassword::prompt_password("Enter the master password ===> ").unwrap();
 
         let salt = context.kgc.borrow().get_salt();
@@ -46,7 +46,8 @@ impl Command for LogInCmd {
     
         // 4. Compare the computed hash with the stored hash.
         if computed_hash_hex != stored_hash {
-            return Err(ErrorExecution::AuthenticationFailed);
+            error!("Invalid password");
+            return false;
         }
     
         
@@ -59,11 +60,11 @@ impl Command for LogInCmd {
     
         info!("Login successful! New session created.");
     
-        Ok(())
+        true
     }
     
 
-    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+    fn validate(&self, context: &Context) -> bool  {
         let val_reg = ValidationRegistry::<LogInCmd>::new();
 
         let val_checks = vec![
@@ -77,15 +78,15 @@ impl Command for LogInCmd {
             match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
                 ValidationResult::Failure(msg) => {
                     error!("{msg}");
-                    return Err(ErrorValidation::Temp);
+                    return false;
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => debug!("test passed ✅")
+                ValidationResult::Success => debug!("test passed ✅")
 
             }
         }
         
-        return Ok(())
+        true
     }
 
     fn display(&self) {

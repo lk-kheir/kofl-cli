@@ -17,6 +17,7 @@ pub struct ValidationRegistry<T> {
 impl ValidationRegistry<InitCmd> {
     pub fn new() -> Self {
         let mut validators:  HashMap<ValidationType, Box<dyn Validator<InitCmd>>> = HashMap::new();
+        validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}));
         Self { validators }
     }
 }

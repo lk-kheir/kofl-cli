@@ -1,6 +1,8 @@
 use crate::cli::Command;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
+use crate::validator::core::{ValidationResult, ValidationType};
+use crate::validator::registry::ValidationRegistry;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use sha2::{Sha256, Digest};
@@ -24,13 +26,14 @@ impl InitCmd {
 }
 
 impl Command for InitCmd {
-        fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+        fn execute(&self, context: &Context) -> bool  {
             
             let master_pwd  = rpassword::prompt_password("type a master password ==> ").unwrap();
             let master_pwd_confirmed = rpassword::prompt_password("type the master password again ==> ").unwrap();
 
             if master_pwd != master_pwd_confirmed {
-                return Err(ErrorExecution::PasswordMismatch);
+                error!("Password mismatch");
+                return false;
             }
 
             let salt:String = thread_rng()
@@ -62,18 +65,33 @@ impl Command for InitCmd {
             // Print the updated configuration
             // println!("Updated kgc = {:?}", context.kgc.borrow());
 
-            Ok(())
+            true
         }
 
-    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
-        if context.kgc.borrow().is_master_key_provided() {
-            debug!("Master key is already provided skipping init phase");
-            return Err(ErrorValidation::AlreadyProvidedMasterKey);
+    fn validate(&self, context: &Context) -> bool  {
+
+        let val_reg = ValidationRegistry::<InitCmd>::new();
+
+        let val_checks = vec![
+            ValidationType::MasterKeyCheck,
+        ];
+
+
+        for a_check in val_checks {
+
+            match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
+                ValidationResult::Failure(msg) => {
+                    error!("{msg}");
+                    return false;
+                },
+                ValidationResult::Warning(msg) => warn!("{msg}"),
+                ValidationResult::Success => debug!("test passed ✅")
+
+            }
         }
-        else {
-            error!("Master key is not provided");
-        }
-        return Ok(())
+        
+        true
+
     }
 
     fn display(&self) {

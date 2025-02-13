@@ -32,12 +32,18 @@ impl GetCmd {
 
 impl Command for GetCmd {
 
-    fn execute(&self, context: &Context) -> Result<(), ErrorExecution> {
+    fn execute(&self, context: &Context) -> bool {
         let entry = context.db.get_entry_by_name(&self.ent_name)
             .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => ErrorExecution::NoMatchingEntry,
-                _ => ErrorExecution::Unknown,
-            })?;
+                rusqlite::Error::QueryReturnedNoRows => {
+                    error!("Entry not found");
+                    return false;
+                },
+                _ => {
+                    error!("Error getting entry by name: {:?}", e);
+                    return false;
+                },
+            }).unwrap();
 
         // Get master key hash
         let master_key_hash = {
@@ -46,9 +52,13 @@ impl Command for GetCmd {
         };
 
         // Decode the master key
-        let master_key_bytes = hex::decode(&master_key_hash)
-            .map_err(|_| ErrorExecution::DecryptionError)?;
-
+        let master_key_bytes = match  hex::decode(&master_key_hash) {
+            Ok(bytes) => bytes,
+            Err(_) => {
+                error!("Error decoding master key hash");
+                return false;
+            }
+        };
         // Create key and nonce
         let key = GenericArray::from_slice(&master_key_bytes);
         let nonce = GenericArray::from_slice(&[0u8; 16]); // Must match the nonce used in AddCmd
@@ -57,15 +67,26 @@ impl Command for GetCmd {
         let mut cipher = Aes256Ctr::new(key, nonce);
 
         // Decode the stored encrypted password
-        let mut encrypted_password = hex::decode(&entry.password_hash)
-            .map_err(|_| ErrorExecution::DecryptionError)?;
+
+        let mut encrypted_password = match hex::decode(&entry.password_hash) {
+            Ok(pwd) => pwd,
+            Err(_) => {
+                error!("Error decoding password hash");
+                return false;
+            }
+        };
 
         // Decrypt
         cipher.apply_keystream(&mut encrypted_password);
 
-        // Convert to string
-        let decrypted_password = String::from_utf8(encrypted_password)
-            .map_err(|_| ErrorExecution::DecryptionError)?;
+
+        let decrypted_password = match String::from_utf8(encrypted_password) {
+            Ok(pwd) => pwd,
+            Err(_) => {
+                error!("Error decrypting password");
+                return false;
+            }
+        };
 
         // println!("Entry Name: {}", entry.ent_name);
         // println!("Password: {}", decrypted_password);
@@ -74,21 +95,26 @@ impl Command for GetCmd {
        
 
         // let the_string = "Hello, world!";
+        // match clipboard.set_text(decrypted_password) {
+        //     Ok(_) => info!("Password is copied to clipboard"),
+        //     Err(ClipboardError::ClipboardNotSupported) => error!("Your system does not support clibboard."),
+        //     Err(ClipboardError::ContentNotAvailable) => error!("Content not available"),
+        //     Err(ClipboardError::ClipboardOccupied) => error!("Clipboard is occupied"),
+        //     Err(ClipboardError::ConversionFailure) => error!("Conversion failure should not happen as we retrieve utf-8 strings not images"),
+        //     Err(ClipboardError::Unknown{description}) => error!("{}", description),
+        //     Err(_) => error!("undefined behaviour"),
+        // }
+
         match clipboard.set_text(decrypted_password) {
             Ok(_) => info!("Password is copied to clipboard"),
-            Err(ClipboardError::ClipboardNotSupported) => error!("Your system does not support clibboard."),
-            Err(ClipboardError::ContentNotAvailable) => error!("Content not available"),
-            Err(ClipboardError::ClipboardOccupied) => error!("Clipboard is occupied"),
-            Err(ClipboardError::ConversionFailure) => error!("Conversion failure should not happen as we retrieve utf-8 strings not images"),
-            Err(ClipboardError::Unknown{description}) => error!("{}", description),
-            Err(_) => error!("undefined behaviour"),
+            Err(e) => error!("Error copying to clipboard: {}", e),
         }
         
         // println!("Clipboard text was: {}", clipboard.get_text().unwrap());
-        Ok(())
+        true
     }   
 
-    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+    fn validate(&self, context: &Context) -> bool  {
 
         let val_reg = ValidationRegistry::<GetCmd>::new();
 
@@ -104,15 +130,15 @@ impl Command for GetCmd {
             match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
                 ValidationResult::Failure(msg) => {
                     error!("{msg}");
-                    return Err(ErrorValidation::Temp);
+                    return false
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => debug!("test passed ✅")
+                ValidationResult::Success => debug!("test passed ✅")
 
             }
         }
         
-        return Ok(())
+        true
     }
 
     fn display(&self) {

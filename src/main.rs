@@ -19,6 +19,7 @@ use colored::*;
 use context::Context;
 use env_logger::{Env, Target};
 use log::{debug, error, info, warn};
+use std::f32::consts::E;
 use std::io::Write;
 use std::process;
 
@@ -82,18 +83,14 @@ fn init_logger() {
 }
 
 fn execute_command<T: Command>(cmd: &T, context: &Context) {
-    match cmd.validate(context) {
-        Ok(_) => match cmd.execute(context) {
-            Ok(_) => {
-                cmd.display();
-            }
-            Err(exec_err) => {
-                error!("Error during execution: {}", exec_err);
-            }
-        },
-        Err(val_err) => match val_err {
-            _ => {}
-        },
+    if cmd.validate(context) {
+        if cmd.execute(context) {
+            cmd.display();
+        } else {
+            error!("Error during execution");
+        }
+    } else {
+        error!("Error during validation");
     }
 }
 

@@ -47,15 +47,19 @@ impl fmt::Debug for AddCmd {
 
 
 impl Command for AddCmd {
-    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+    fn execute(&self, context: &Context) -> bool  {
         let master_key_hash = {
             let kgc = context.kgc.borrow();
             kgc.get_hashed_pwd()
         };
 
-        // Decode the master key hash from hex
-        let master_key_bytes = hex::decode(&master_key_hash)
-            .map_err(|_| ErrorExecution::EncryptionError)?;
+        let master_key_bytes = match hex::decode(&master_key_hash) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                error!("Error decoding master key hash: {}", e);
+                return false;
+            }
+        };
 
         // Create key and nonce
         let key = GenericArray::from_slice(&master_key_bytes);
@@ -79,13 +83,22 @@ impl Command for AddCmd {
             timestamp: Utc::now().to_rfc3339()
         };
 
-        context.db.add_entry(new_entry)
-            .map_err(|_| ErrorExecution::DatabaseError)?;
+        // Add the entry to the database if error return false
 
-        Ok(())
+        match context.db.add_entry(new_entry) {
+            Ok(_) => {
+                info!("Entry added successfully");
+            },
+            Err(e) => {
+                error!("Error adding entry: {}", e);
+                return false;
+            }
+        }
+
+        true
     }
 
-    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+    fn validate(&self, context: &Context) -> bool  {
         
         let val_reg = ValidationRegistry::<AddCmd>::new();
 
@@ -101,14 +114,14 @@ impl Command for AddCmd {
             match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
                 ValidationResult::Failure(msg) => {
                     error!("{msg}");
-                    return Err(ErrorValidation::Temp);
+                    return false;
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => debug!("test passed ✅")
+                ValidationResult::Success => debug!("test passed ✅")
 
             }
         }
-        return Ok(())
+        true
     }
 
     fn display(&self) {

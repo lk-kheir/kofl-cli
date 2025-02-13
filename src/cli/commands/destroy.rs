@@ -28,7 +28,7 @@ impl DestroyCmd {
 }
 
 impl Command for DestroyCmd {
-    fn execute(&self, context: &Context) -> Result<(), ErrorExecution>  {
+    fn execute(&self, context: &Context) -> bool  {
         warn!(
         "Note this is will delete all your data!!, Backup if needed
         ");
@@ -49,7 +49,8 @@ impl Command for DestroyCmd {
     
         // 4. Compare the computed hash with the stored hash.
         if computed_hash_hex != stored_hash {
-            return Err(ErrorExecution::AuthenticationFailed);
+            error!("Invalid password");
+            return false;
         }
 
         // retrieve all config path and session path
@@ -59,21 +60,41 @@ impl Command for DestroyCmd {
         let config_path = binding.get_config_path();
         let session_path = context.ss.get_session_path();
         
-        // println!("{}", data_path.display());
-        // println!("{}", config_path.display());
-        // println!("{}", session_path.display());
+        // debug!("{}", data_path.display());
+        // debug!("{}", config_path.display());
+        // debug!("{}", session_path.display());
 
         // remove the db;
-        fs::remove_file(data_path)?;
-        fs::remove_file(config_path)?;
-        fs::remove_file(session_path)?;
+        match fs::remove_file(&data_path) {
+            Ok(_) => (),
+            Err(err) => {
+                error!("Failed to remove data storage file: {}", err);
+                return false;
+            }
+        }
+        match fs::remove_file(&config_path) {
+            Ok(_) => (),
+            Err(err) => {
+                error!("Failed to remove kofl configuration file: {}", err);
+                return false;
+            }
+        }
+
+        match fs::remove_file(&session_path) {
+            Ok(_) => (),
+            Err(err) => {
+                error!("Failed to remove kofl session file: {}", err);
+                return false;
+            }
+        }
+
 
         info!("\nAll data related to Kofl configuration have been deleted.\nRun init to start again");
 
-        Ok(())
+        true
     }
 
-    fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
+    fn validate(&self, context: &Context) -> bool  {
         
         let val_reg = ValidationRegistry::<DestroyCmd>::new();
 
@@ -88,15 +109,15 @@ impl Command for DestroyCmd {
             match val_reg.validators.get(&a_check).unwrap().validate(context, &self) {
                 ValidationResult::Failure(msg) => {
                     error!("{msg}");
-                    return Err(ErrorValidation::Temp);
+                    return false;
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => debug!("test passed ✅")
+                ValidationResult::Success => debug!("test passed ✅")
 
             }
         }
         
-        return Ok(())
+        true
     }
 
     fn display(&self) {
