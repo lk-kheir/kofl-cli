@@ -8,7 +8,7 @@ pub struct SessionValidator {}
 
 impl Validator<GetCmd> for SessionValidator {
     fn validate(&self, context: &Context, _cmd: &GetCmd) -> ValidationResult {
-        log::info!("Running SessionValidator");
+        log::debug!("Running SessionValidator");
         if !context.ss.check_if_expired() {
             ValidationResult::Success
         } else {
@@ -19,7 +19,7 @@ impl Validator<GetCmd> for SessionValidator {
 
 impl Validator<AddCmd> for SessionValidator {
     fn validate(&self, context: &Context, _cmd: &AddCmd) -> ValidationResult {
-        log::info!("Running SessionValidator");
+        log::debug!("Running SessionValidator");
         if !context.ss.check_if_expired() {
             ValidationResult::Success
         } else {
@@ -32,7 +32,7 @@ impl Validator<AddCmd> for SessionValidator {
 
 impl Validator<LogInCmd> for SessionValidator {
     fn validate(&self, context: &Context, _cmd: &LogInCmd) -> ValidationResult {
-        log::info!("Running SessionValidator");
+        log::debug!("Running SessionValidator");
         if context.ss.check_if_expired() {
             ValidationResult::Success // means that session expired and it makes sense to allow login command
         } else {
@@ -44,7 +44,7 @@ impl Validator<LogInCmd> for SessionValidator {
 
 impl Validator<DestroyCmd> for SessionValidator {
     fn validate(&self, context: &Context, _cmd: &DestroyCmd) -> ValidationResult {
-        log::info!("Running SessionValidator");
+        log::debug!("Running SessionValidator");
         if !context.ss.check_if_expired() {
             ValidationResult::Success // means that session expired and it makes sense to allow login command
         } else {

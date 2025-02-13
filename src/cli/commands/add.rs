@@ -104,7 +104,7 @@ impl Command for AddCmd {
                     return Err(ErrorValidation::Temp);
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => info!("test passed ✅")
+                _ => debug!("test passed ✅")
 
             }
         }
@@ -112,7 +112,7 @@ impl Command for AddCmd {
     }
 
     fn display(&self) {
-        info!("Add command with name = {}", self.name);
+        debug!("Add command with name = {}", self.name);
         ()
     }
 }

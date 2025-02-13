@@ -1,3 +1,8 @@
+[features]
+default = ["prod"]
+dev = []
+prod = []
+
 [package]
 name = "kofl"
 version = "0.1.0"

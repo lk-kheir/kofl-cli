@@ -6,7 +6,7 @@ pub struct MasterKeyValidator {}
 
 impl<T> Validator<T> for MasterKeyValidator {
     fn validate(&self, context: &Context, _cmd: &T) -> ValidationResult {
-        log::info!("Running MasterKeyValidator");
+        log::debug!("Running MasterKeyValidator");
         if context.kgc.borrow().is_master_key_provided() {
             ValidationResult::Success
         } else {

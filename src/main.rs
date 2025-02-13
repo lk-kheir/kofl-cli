@@ -38,6 +38,49 @@ enum Commands {
     Get { ent_name: String },
 }
 
+
+fn init_logger() {
+    #[cfg(feature = "prod")]
+    {
+        env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+            .format(|buf, record| {
+                writeln!(
+                    buf,
+                    "[{}] - {}",
+                    record.level(),
+                    record.args()
+                )
+            })
+            .target(Target::Stdout)
+            .init();
+    }
+
+    #[cfg(feature = "dev")]
+    {
+        env_logger::Builder::from_env(Env::default().default_filter_or("debug"))
+            .format(|buf, record| {
+                let level = match record.level() {
+                    log::Level::Error => "ERROR".red(),
+                    log::Level::Warn => "WARN".yellow(),
+                    log::Level::Info => "INFO".green(),
+                    log::Level::Debug => "DEBUG".blue(),
+                    log::Level::Trace => "TRACE".purple(),
+                };
+                writeln!(
+                    buf,
+                    "[{}] - {}:{}:{} - {}",
+                    level,
+                    record.module_path().unwrap_or("unknown_module"),
+                    record.file().unwrap_or("unknown_file"),
+                    record.line().unwrap_or(0),
+                    record.args()
+                )
+            })
+            .target(Target::Stdout)
+            .init();
+    }
+}
+
 fn execute_command<T: Command>(cmd: &T, context: &Context) {
     match cmd.validate(context) {
         Ok(_) => match cmd.execute(context) {
@@ -56,35 +99,12 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
 
 fn main() {
     // Initialize the logger
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug"))
-        .format(|buf, record| {
-            let level = match record.level() {
-                log::Level::Error => "ERROR".red(),
-                log::Level::Warn => "WARN".yellow(),
-                log::Level::Info => "INFO".green(),
-                log::Level::Debug => "DEBUG".blue(),
-                log::Level::Trace => "TRACE".purple(),
-            };
-            writeln!(
-                buf,
-                "[{}] - {}:{}:{} - {}",
-                level,
-                record.module_path().unwrap_or("unknown_module"),
-                record.file().unwrap_or("unknown_file"),
-                record.line().unwrap_or(0),
-                record.args()
-            )
-        })
-        .target(Target::Stdout)
-        .init();
+    init_logger();
 
-    let context = match Context::new() {
-        Err(_) => {
-            error!("Program terminated due to setup issues");
-            process::exit(1);
-        }
-        Ok(context) => context,
-    };
+    let context = Context::new().unwrap_or_else(|err| {
+        error!("Program terminated due to setup issues: {}", err);
+        process::exit(1);
+    });
 
     debug!("{:?}", context.kgc);
     debug!("{:?}", context.ss);

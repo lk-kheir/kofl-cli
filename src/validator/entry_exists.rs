@@ -8,7 +8,7 @@ pub struct EntryExistsValidator {}
 // For GetCmd: succeed if the entry exists.
 impl Validator<GetCmd> for EntryExistsValidator {
     fn validate(&self, context: &Context, cmd: &GetCmd) -> ValidationResult {
-        log::info!("Running EntryExistsValidator for GetCmd");
+        log::debug!("Running EntryExistsValidator for GetCmd");
         match context.db.entry_exist(cmd.ent_name.clone()) {
             Ok(exists) => {
                 if exists {
@@ -25,7 +25,7 @@ impl Validator<GetCmd> for EntryExistsValidator {
 // For AddCmd: fail if the entry already exists.
 impl Validator<AddCmd> for EntryExistsValidator {
     fn validate(&self, context: &Context, cmd: &AddCmd) -> ValidationResult {
-        log::info!("Running EntryExistsValidator for AddCmd");
+        log::debug!("Running EntryExistsValidator for AddCmd");
         match context.db.entry_exist(cmd.name.clone()) {
             Ok(exists) => {
                 if exists {

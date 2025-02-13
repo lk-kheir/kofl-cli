@@ -107,7 +107,7 @@ impl Command for GetCmd {
                     return Err(ErrorValidation::Temp);
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => info!("test passed ✅")
+                _ => debug!("test passed ✅")
 
             }
         }
@@ -116,7 +116,7 @@ impl Command for GetCmd {
     }
 
     fn display(&self) {
-        info!("Get command with entry name = {}", self.ent_name);
+        debug!("Get command with entry name = {}", self.ent_name);
         ()
     }
 }

@@ -67,7 +67,7 @@ impl Command for InitCmd {
 
     fn validate(&self, context: &Context) -> Result<(), ErrorValidation>  {
         if context.kgc.borrow().is_master_key_provided() {
-            info!("Master key is already provided skipping init phase");
+            debug!("Master key is already provided skipping init phase");
             return Err(ErrorValidation::AlreadyProvidedMasterKey);
         }
         else {
@@ -77,7 +77,7 @@ impl Command for InitCmd {
     }
 
     fn display(&self) {
-        println!("Init Command");
+        debug!("Init Command");
         ()
     }
 }

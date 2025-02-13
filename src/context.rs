@@ -48,7 +48,7 @@ impl Context {
 
         match session.load() {
             Ok(_) => {
-                info!("Successfully loaded the session file.");
+                debug!("Successfully loaded the session file.");
             }
             Err(SessionError::SessionFileMissingError) => {
                 warn!("Session config file missing, creating a new session.");

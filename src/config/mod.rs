@@ -1,6 +1,7 @@
 pub mod Config {
 
     use crate::utils::Utils::{check_existing_config, get_home_dir};
+    use log::debug;
     use serde::{Deserialize, Serialize};
     use std::env;
     use std::fmt::Debug;
@@ -83,7 +84,7 @@ pub mod Config {
                     }
                 }
             } else {
-                println!("config file does not exists");
+                debug!("config file does not exists");
                 self.write_config_to_toml_file();
             }
         }
@@ -98,7 +99,7 @@ pub mod Config {
 
         fn write_config_to_toml_file(&self) {
             let toml_str = self.serialize_to_toml();
-            println!("toml str =\n{}", toml_str);
+            debug!("toml str =\n{}", toml_str);
             let config_pth = &self.config_path;
             fs::write(config_pth, toml_str).expect("could not create toml file for config");
         }

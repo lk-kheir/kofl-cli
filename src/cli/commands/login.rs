@@ -80,7 +80,7 @@ impl Command for LogInCmd {
                     return Err(ErrorValidation::Temp);
                 },
                 ValidationResult::Warning(msg) => warn!("{msg}"),
-                _ => info!("test passed ✅")
+                _ => debug!("test passed ✅")
 
             }
         }
@@ -89,7 +89,7 @@ impl Command for LogInCmd {
     }
 
     fn display(&self) {
-        info!("Login Command");
+        debug!("Login Command");
         ()
     }
 }

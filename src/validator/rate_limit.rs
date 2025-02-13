@@ -7,7 +7,7 @@ pub struct RateLimitValidator {}
 
 impl<T> Validator<T> for RateLimitValidator {
     fn validate(&self, _context: &Context, _cmd: &T) -> ValidationResult {
-        log::info!("Running RateLimitValidator");
+        log::debug!("Running RateLimitValidator");
         ValidationResult::Success
     }
 }
