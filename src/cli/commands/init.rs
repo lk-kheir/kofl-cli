@@ -1,6 +1,7 @@
 use crate::cli::Command;
 use crate::errors::{ErrorExecution, ErrorValidation};
 use crate::context::Context;
+use crate::session::Session;
 use crate::validator::core::{ValidationResult, ValidationType};
 use crate::validator::registry::ValidationRegistry;
 use rand::{thread_rng, Rng};
@@ -64,6 +65,11 @@ impl Command for InitCmd {
             context.kgc.borrow().update();
             // Print the updated configuration
             // println!("Updated kgc = {:?}", context.kgc.borrow());
+
+            let user_login = context.kgc.borrow().get_user_login().clone();
+            let new_session = Session::new(user_login, true);
+        
+            new_session.write_session_config_to_toml_file();
 
             true
         }

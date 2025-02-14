@@ -47,7 +47,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(user_login: String) -> Self {
+    pub fn new(user_login: String, status: bool) -> Self {
         let now = Utc::now();
         let home_dir = get_home_dir().expect("Home directory not found");
         Session {
@@ -59,9 +59,9 @@ impl Session {
                 .collect(),
             user_login,
             created_at: now,
-            expires_at: now + chrono::Duration::seconds(600),
+            expires_at: now + chrono::Duration::seconds(30),
             last_activity: now,
-            is_active: true
+            is_active: status
         }
     }
 

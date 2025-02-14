@@ -53,7 +53,7 @@ impl Command for LogInCmd {
         
 
         let user_login = context.kgc.borrow().get_user_login().clone();
-        let new_session = Session::new(user_login);
+        let new_session = Session::new(user_login, true);
         
         new_session.write_session_config_to_toml_file();
     

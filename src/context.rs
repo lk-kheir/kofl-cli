@@ -1,6 +1,7 @@
 use crate::config::Config::KoflGlobalConfig;
 use crate::db::Db::Database;
 use crate::errors::ErrorSetup;
+use crate::session;
 use rusqlite::Error;
 use std::cell::RefCell;
 use crate::session::Session;
@@ -43,8 +44,20 @@ impl Context {
             Ok(val) => val,
             Err(_) => String::from("default_user"),
         };
+        
+        let mut allow_recreation_of_session = false;
+        let mut session;
+        
+        
+        if (c.borrow().is_master_key_provided()) {
+            allow_recreation_of_session = true;
+            session = Session::new(user_login.clone(), true);
+        }
+        else {
+            session = Session::new(user_login.clone(), false);
+        }
+        
 
-        let mut session = Session::new(user_login.clone());
 
         match session.load() {
             Ok(_) => {
@@ -52,13 +65,23 @@ impl Context {
             }
             Err(SessionError::SessionFileMissingError) => {
                 warn!("Session config file missing, creating a new session.");
-                session = Session::new(user_login);
-                session.write_session_config_to_toml_file();
+                if allow_recreation_of_session {
+                    session = Session::new(user_login, true);
+                    session.write_session_config_to_toml_file();
+                }else {
+                    session = Session::new(user_login, false);
+                    session.write_session_config_to_toml_file(); 
+                }
             }
             Err(SessionError::FailedLoadingError) => {
                 warn!("Failed to load the session details, creating a new session.");
-                session = Session::new(user_login);
-                session.write_session_config_to_toml_file();
+                if allow_recreation_of_session {
+                    session = Session::new(user_login, true);
+                    session.write_session_config_to_toml_file();
+                }else {
+                    session = Session::new(user_login, false);
+                    session.write_session_config_to_toml_file(); 
+                }
             }
             Err(SessionError::ExpiredSession) => {
                 warn!("Session expired");
@@ -69,8 +92,13 @@ impl Context {
             }
             Err(_) => {
                 // warn!("No existing session, creating a new session.");
-                // session = Session::new(user_login);
-                // session.write_session_config_to_toml_file();
+                if allow_recreation_of_session {
+                    session = Session::new(user_login, true);
+                    session.write_session_config_to_toml_file();
+                }else {
+                    session = Session::new(user_login, false);
+                    session.write_session_config_to_toml_file(); 
+                }
             }
         }
 
