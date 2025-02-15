@@ -1,13 +1,15 @@
 pub mod Config {
 
     use crate::utils::Utils::{check_existing_config, get_home_dir};
-    use log::debug;
+    use log::{debug, error};
     use serde::{Deserialize, Serialize};
     use std::env;
     use std::fmt::Debug;
     use std::fs;
     use std::path::PathBuf;
     use toml;
+    use sha2::{Sha256, Digest};
+
 
     #[derive(Serialize, Deserialize)]
     pub struct KoflGlobalConfig {
@@ -84,25 +86,56 @@ pub mod Config {
             self.master_key_provided
         }
 
+        fn get_config_checksum(&self) -> String {
+            let content = fs::read_to_string(self.get_config_path())
+                .unwrap_or_else(|_| String::new());
+            
+            let mut hasher = Sha256::new();
+            hasher.update(content.as_bytes());
+            hex::encode(hasher.finalize())
+        }
+
+        fn verify_integrity(&self) -> bool {
+            // Read stored checksum from a separate file
+            let checksum_path = self.get_config_path()
+                .with_extension("checksum");
+            
+            if let Ok(stored_checksum) = fs::read_to_string(&checksum_path) {
+                let current_checksum = self.get_config_checksum();
+                return stored_checksum == current_checksum;
+            }
+            false
+        }
+
         pub fn load(&mut self) {
-            if check_existing_config() {
-                match self.read_config_from_toml_file() {
-                    Ok(config) => {
-                        *self = config;
-                    }
-                    Err(e) => {
-                        println!("Failed to load config: {}", e);
-                        // Handle error, e.g., use default values or exit
-                    }
-                }
-            } else {
-                debug!("config file does not exists");
+            if !check_existing_config() {
                 self.write_config_to_toml_file();
+                return;
+            }
+    
+            if !self.verify_integrity() {
+                error!("Config file integrity check failed! Possible tampering detected.");
+                // note: handle error appropriately with backup or reset to figure it out later
+                // return;
+            }
+    
+            match self.read_config_from_toml_file() {
+                Ok(config) => *self = config,
+                Err(e) => {
+                    error!("Failed to load config: {}", e);
+                    // Handle error appropriately
+                }
             }
         }
 
         pub fn update(&self) {
             self.write_config_to_toml_file();
+             // Save checksum
+            let checksum = self.get_config_checksum();
+            let checksum_path = self.get_config_path()
+                .with_extension("checksum");
+            fs::write(checksum_path, checksum)
+                .expect("Failed to write checksum file");
         }
 
         pub fn serialize_to_toml(&self) -> String {
@@ -176,6 +209,42 @@ mod tests {
     use tempfile::TempDir;
     use serial_test::serial;
 
+    struct EnvGuard {
+        key: &'static str,
+        original: Option<String>,
+    }
+
+    impl EnvGuard {
+        fn new(key: &'static str) -> Self {
+            let original = env::var(key).ok();
+            Self { key, original }
+        }
+
+        fn set_var(&self, value: &str) {
+            env::set_var(self.key, value);
+        }
+
+        fn remove_var(&self) {
+            env::remove_var(self.key);
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            match &self.original {
+                Some(original) => env::set_var(self.key, original),
+                None => env::remove_var(self.key),
+            }
+        }
+    }
+
+    // Add this setup function
+    fn setup_test_env() -> EnvGuard {
+        let guard = EnvGuard::new("USER");
+        guard.set_var("lk-kheir"); // Use the correct username
+        guard
+    }
+
     fn get_expected_home() -> PathBuf {
         env::var("HOME")
             .map(PathBuf::from)
@@ -195,17 +264,16 @@ mod tests {
     
         // Helper function to create a valid TOML config file
         fn create_valid_config_file(path: &PathBuf) {
-            // username = "zain" change this line to your username from variable USER
-
-            let config_content = r#"
+            let username = env::var("USER").unwrap_or_else(|_| "default_user".to_string());
+            let config_content = format!(r#"
                 config_path = "/tmp/test/.kofl"
                 data_storage_path = "/tmp/test/kofl.sqlite"
                 user_id = "1234567"
-                username = "zain"
+                username = "{}"
                 salt = "test_salt"
                 hashed_pwd = "test_hash"
                 master_key_provided = true
-            "#;
+            "#, username);
             fs::write(path, config_content).expect("Failed to write test config file");
         }
     
@@ -458,6 +526,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_load_with_existing_config() {
+        let _guard = setup_test_env();
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         
@@ -469,7 +538,7 @@ mod tests {
         config.load();
 
         // Assert
-        assert_eq!(config.get_user_login(), "zain");// zain to be replaced with your username from USER variable
+        assert_eq!(config.get_user_login(), env::var("USER").unwrap_or_else(|_| "default_user".to_string()));
         assert_eq!(config.get_salt(), "test_salt");
         assert_eq!(config.get_hashed_pwd(), "test_hash");
         assert!(config.is_master_key_provided());
@@ -478,6 +547,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_load_without_existing_config() {
+        let _guard = setup_test_env();
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let mut config = create_test_config(&temp_dir);
@@ -491,7 +561,7 @@ mod tests {
 
         // Assert
         assert!(config.get_config_path().exists(), "Config file should be created");
-        assert_eq!(config.get_user_login(), "zain"); // zain to be replaced with your username from USER variable
+        assert_eq!(config.get_user_login(), env::var("USER").unwrap_or_else(|_| "default_user".to_string()));
         assert!(config.get_salt().is_empty());
         assert!(config.get_hashed_pwd().is_empty());
         assert!(!config.is_master_key_provided());
@@ -500,6 +570,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_load_with_invalid_config() {
+        let _guard = setup_test_env();
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let mut config = create_test_config(&temp_dir);
@@ -512,7 +583,7 @@ mod tests {
 
         // Assert
         // Should fall back to default values
-        assert_eq!(config.get_user_login(), "zain");
+        assert_eq!(config.get_user_login(), env::var("USER").unwrap_or_else(|_| "default_user".to_string()));
         assert!(config.get_salt().is_empty());
         assert!(config.get_hashed_pwd().is_empty());
         assert!(!config.is_master_key_provided());
