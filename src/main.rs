@@ -2,6 +2,7 @@
 
 mod cli;
 mod config;
+mod backup;
 mod context;
 mod db;
 mod errors;

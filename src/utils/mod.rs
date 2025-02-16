@@ -10,6 +10,24 @@ pub mod Utils {
     pub fn get_home_dir() -> Option<PathBuf> {
         env::home_dir()
     }
+
+    pub fn get_backup_dir() -> Option<PathBuf> {
+        let home_dir = get_home_dir().expect("Could not find home directory");
+        let back_dir = home_dir.join(".kofl_backups");
+    
+        if back_dir.is_dir() {
+            Some(back_dir)
+        } else {
+            // Try to create the backup directory
+            match std::fs::create_dir_all(&back_dir) {
+                Ok(_) => Some(back_dir),
+                Err(e) => {
+                    eprintln!("Failed to create backup directory: {}", e);
+                    None
+                }
+            }
+        }
+    }
     
     /// Utility function to create a config path in the user's home directory.
     /// Takes a filename as a parameter and returns the full path.
@@ -24,7 +42,7 @@ pub mod Utils {
 
     pub fn check_existing_config() -> bool {
         if let Some(home_dir) = get_home_dir() {
-            // println!("home dir = {:?}", home_dir.join(".kofl"));
+            println!("home dir = {:?}", home_dir.join(".kofl"));
             return fs::exists(home_dir.join(".kofl")).unwrap();
         }
         false

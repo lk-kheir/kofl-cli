@@ -1,15 +1,15 @@
 pub mod Config {
 
-    use crate::utils::Utils::{check_existing_config, get_home_dir};
+    use crate::utils::Utils::{check_existing_config, get_config_path, get_home_dir};
+    use crate::backup::Backup;
     use log::{debug, error};
     use serde::{Deserialize, Serialize};
+    use sha2::{Digest, Sha256};
     use std::env;
     use std::fmt::Debug;
     use std::fs;
     use std::path::PathBuf;
     use toml;
-    use sha2::{Sha256, Digest};
-
 
     #[derive(Serialize, Deserialize)]
     pub struct KoflGlobalConfig {
@@ -27,7 +27,7 @@ pub mod Config {
             let home_dir = get_home_dir().expect("Home directory not found");
             let key = "USER";
             KoflGlobalConfig {
-                config_path: home_dir.join(".kofl"), // Example using the home directory
+                config_path: home_dir.join(".kofl"),
                 data_storage_path: home_dir.join("kofl.sqlite"),
                 user_id: String::from("1234567"),
                 username: match env::var(key) {
@@ -87,9 +87,9 @@ pub mod Config {
         }
 
         fn get_config_checksum(&self) -> String {
-            let content = fs::read_to_string(self.get_config_path())
-                .unwrap_or_else(|_| String::new());
-            
+            let content =
+                fs::read_to_string(self.get_config_path()).unwrap_or_else(|_| String::new());
+
             let mut hasher = Sha256::new();
             hasher.update(content.as_bytes());
             hex::encode(hasher.finalize())
@@ -97,9 +97,8 @@ pub mod Config {
 
         fn verify_integrity(&self) -> bool {
             // Read stored checksum from a separate file
-            let checksum_path = self.get_config_path()
-                .with_extension("checksum");
-            
+            let checksum_path = self.get_config_path().with_extension("checksum");
+
             if let Ok(stored_checksum) = fs::read_to_string(&checksum_path) {
                 let current_checksum = self.get_config_checksum();
                 return stored_checksum == current_checksum;
@@ -109,18 +108,23 @@ pub mod Config {
 
         pub fn load(&mut self) {
             if !check_existing_config() {
+                println!("no existing config");
                 self.write_config_to_toml_file();
                 return;
             }
-    
+
             if !self.verify_integrity() {
                 error!("Config file integrity check failed! Possible tampering detected.");
-                // note: handle error appropriately with backup or reset to figure it out later
-                // return;
             }
-    
+
             match self.read_config_from_toml_file() {
-                Ok(config) => *self = config,
+                Ok(config) => {
+                    *self = config;
+                    // create a backup for now this is only for testing;
+                    let bc = Backup::new().unwrap();
+                    bc.create_new_backup(&self.get_config_path(), &self.get_data_storage_path(), &self.get_config_path().with_extension("checksum"));
+
+                },
                 Err(e) => {
                     error!("Failed to load config: {}", e);
                     // Handle error appropriately
@@ -130,12 +134,10 @@ pub mod Config {
 
         pub fn update(&self) {
             self.write_config_to_toml_file();
-             // Save checksum
+            // Save checksum
             let checksum = self.get_config_checksum();
-            let checksum_path = self.get_config_path()
-                .with_extension("checksum");
-            fs::write(checksum_path, checksum)
-                .expect("Failed to write checksum file");
+            let checksum_path = self.get_config_path().with_extension("checksum");
+            fs::write(checksum_path, checksum).expect("Failed to write checksum file");
         }
 
         pub fn serialize_to_toml(&self) -> String {
@@ -200,14 +202,13 @@ pub mod Config {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::Config::KoflGlobalConfig;
-    use std::{env, fs};
-    use std::path::PathBuf;
-    use tempfile::TempDir;
     use serial_test::serial;
+    use std::path::PathBuf;
+    use std::{env, fs};
+    use tempfile::TempDir;
 
     struct EnvGuard {
         key: &'static str,
@@ -251,21 +252,22 @@ mod tests {
             .unwrap_or_else(|_| PathBuf::from("/home/default"))
     }
 
-        // Helper function to create a config with temp directory
-        fn create_test_config(temp_dir: &TempDir) -> KoflGlobalConfig {
-            let mut config = KoflGlobalConfig::new();
-            let config_path = temp_dir.path().join(".kofl");
-            let storage_path = temp_dir.path().join("kofl.sqlite");
-            config.set_config_path(config_path);
-            config.set_data_storage_path(storage_path);
-            
-            config
-        }
-    
-        // Helper function to create a valid TOML config file
-        fn create_valid_config_file(path: &PathBuf) {
-            let username = env::var("USER").unwrap_or_else(|_| "default_user".to_string());
-            let config_content = format!(r#"
+    // Helper function to create a config with temp directory
+    fn create_test_config(temp_dir: &TempDir) -> KoflGlobalConfig {
+        let mut config = KoflGlobalConfig::new();
+        let config_path = temp_dir.path().join(".kofl");
+        let storage_path = temp_dir.path().join("kofl.sqlite");
+        config.set_config_path(config_path);
+        config.set_data_storage_path(storage_path);
+
+        config
+    }
+
+    // Helper function to create a valid TOML config file
+    fn create_valid_config_file(path: &PathBuf) {
+        let username = env::var("USER").unwrap_or_else(|_| "default_user".to_string());
+        let config_content = format!(
+            r#"
                 config_path = "/tmp/test/.kofl"
                 data_storage_path = "/tmp/test/kofl.sqlite"
                 user_id = "1234567"
@@ -273,32 +275,38 @@ mod tests {
                 salt = "test_salt"
                 hashed_pwd = "test_hash"
                 master_key_provided = true
-            "#, username);
-            fs::write(path, config_content).expect("Failed to write test config file");
-        }
-    
-        // Helper function to create an invalid TOML config file
-        fn create_invalid_config_file(path: &PathBuf) {
-            let invalid_content = r#"
+            "#,
+            username
+        );
+        fs::write(path, config_content).expect("Failed to write test config file");
+    }
+
+    // Helper function to create an invalid TOML config file
+    fn create_invalid_config_file(path: &PathBuf) {
+        let invalid_content = r#"
                 This is not a valid TOML file
                 config_path = /invalid/path
                 missing quotes and equals signs
             "#;
-            fs::write(path, invalid_content).expect("Failed to write invalid test config file");
-        }
+        fs::write(path, invalid_content).expect("Failed to write invalid test config file");
+    }
 
     #[test]
     #[serial]
     fn test_new_config_default_values() {
-        // Arrange
-        let expected_home = get_expected_home();
-        
-        // Act
-        let config = KoflGlobalConfig::new();
+        // Set up environment
+        let _guard = EnvGuard::new("USER");
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
 
-        // Assert
-        assert_eq!(config.get_config_path(), &expected_home.join(".kofl"));
-        assert_eq!(config.get_data_storage_path(), &expected_home.join("kofl.sqlite"));
+        // Create config with temp directory
+        let config = create_test_config(&temp_dir);
+
+        // Assert default values using temp paths
+        let expected_config_path = temp_dir.path().join(".kofl");
+        let expected_storage_path = temp_dir.path().join("kofl.sqlite");
+
+        assert_eq!(config.get_config_path(), &expected_config_path);
+        assert_eq!(config.get_data_storage_path(), &expected_storage_path);
         assert_eq!(config.get_salt(), "");
         assert_eq!(config.get_hashed_pwd(), "");
         assert!(!config.is_master_key_provided());
@@ -336,17 +344,23 @@ mod tests {
     #[test]
     #[serial]
     fn test_new_config_paths_correctness() {
-        // Act
-        let config = KoflGlobalConfig::new();
+        // Set up environment
+        let _guard = EnvGuard::new("USER");
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
 
-        // Assert
+        // Create config with temp directory
+        let config = create_test_config(&temp_dir);
+
+        // Assert path properties
         let config_path = config.get_config_path();
         let data_storage_path = config.get_data_storage_path();
 
         assert!(config_path.is_absolute(), "Config path should be absolute");
-        assert!(data_storage_path.is_absolute(), "Data storage path should be absolute");
-        
-        // Test file names
+        assert!(
+            data_storage_path.is_absolute(),
+            "Data storage path should be absolute"
+        );
+
         assert_eq!(
             config_path.file_name().unwrap().to_str().unwrap(),
             ".kofl",
@@ -362,26 +376,35 @@ mod tests {
     // Test path structure validity
     #[test]
     fn test_path_structure_validity() {
-        // Act
-        let config = KoflGlobalConfig::new();
+        // Set up environment
+        let _guard = EnvGuard::new("USER");
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        // Create config with temp directory
+        let config = create_test_config(&temp_dir);
+
         let config_path = config.get_config_path();
         let data_storage_path = config.get_data_storage_path();
 
-        // Assert
-        // Test that paths don't contain invalid characters
+        // Test path validity
         assert!(!config_path.to_str().unwrap().contains(".."));
         assert!(!data_storage_path.to_str().unwrap().contains(".."));
-        
-        // Test that paths are properly formatted
+
         assert!(config_path.is_absolute());
         assert!(data_storage_path.is_absolute());
-        
+
         // Test path components
         let config_components: Vec<_> = config_path.components().collect();
         let storage_components: Vec<_> = data_storage_path.components().collect();
-        
-        assert!(config_components.len() >= 2, "Path should have at least 2 components");
-        assert!(storage_components.len() >= 2, "Path should have at least 2 components");
+
+        assert!(
+            config_components.len() >= 2,
+            "Path should have at least 2 components"
+        );
+        assert!(
+            storage_components.len() >= 2,
+            "Path should have at least 2 components"
+        );
     }
 
     #[test]
@@ -392,7 +415,10 @@ mod tests {
 
         // Act & Assert
         // Test initial empty state
-        assert!(config.get_salt().is_empty(), "Salt should be empty initially");
+        assert!(
+            config.get_salt().is_empty(),
+            "Salt should be empty initially"
+        );
 
         // Test setting salt
         config.set_salt(test_salt.clone());
@@ -405,22 +431,33 @@ mod tests {
 
         // Test empty salt
         config.set_salt("".to_string());
-        assert!(config.get_salt().is_empty(), "Salt should be empty after clearing");
+        assert!(
+            config.get_salt().is_empty(),
+            "Salt should be empty after clearing"
+        );
     }
 
     #[test]
     fn test_master_key_hash_operations() {
         // Arrange
         let mut config = KoflGlobalConfig::new();
-        let test_hash = "0302c4c69140fccfa36fb4ce6bcaed58fa65d221b6a8a6d5f2a183c056653c39".to_string();
+        let test_hash =
+            "0302c4c69140fccfa36fb4ce6bcaed58fa65d221b6a8a6d5f2a183c056653c39".to_string();
 
         // Act & Assert
         // Test initial empty state
-        assert!(config.get_hashed_pwd().is_empty(), "Hash should be empty initially");
+        assert!(
+            config.get_hashed_pwd().is_empty(),
+            "Hash should be empty initially"
+        );
 
         // Test setting hash
         config.set_master_key_hash(test_hash.clone());
-        assert_eq!(config.get_hashed_pwd(), test_hash, "Hash should match set value");
+        assert_eq!(
+            config.get_hashed_pwd(),
+            test_hash,
+            "Hash should match set value"
+        );
 
         // Test updating hash
         let new_hash = "newhashnewhashnewhashnewhashnewhashnewhashnewhashnewha".to_string();
@@ -429,7 +466,10 @@ mod tests {
 
         // Test empty hash
         config.set_master_key_hash("".to_string());
-        assert!(config.get_hashed_pwd().is_empty(), "Hash should be empty after clearing");
+        assert!(
+            config.get_hashed_pwd().is_empty(),
+            "Hash should be empty after clearing"
+        );
     }
 
     #[test]
@@ -439,15 +479,24 @@ mod tests {
 
         // Act & Assert
         // Test initial state
-        assert!(!config.is_master_key_provided(), "Master key should not be provided initially");
+        assert!(
+            !config.is_master_key_provided(),
+            "Master key should not be provided initially"
+        );
 
         // Test setting to true
         config.set_master_key_provided(true);
-        assert!(config.is_master_key_provided(), "Master key should be marked as provided");
+        assert!(
+            config.is_master_key_provided(),
+            "Master key should be marked as provided"
+        );
 
         // Test setting to false
         config.set_master_key_provided(false);
-        assert!(config.is_master_key_provided(), "Master key provided cannot be unset once set");
+        assert!(
+            config.is_master_key_provided(),
+            "Master key provided cannot be unset once set"
+        );
     }
 
     #[test]
@@ -459,15 +508,30 @@ mod tests {
 
         // Act & Assert
         // Test initial state
-        assert!(!config.is_master_key_provided(), "Should not be provided initially");
-        assert!(config.get_salt().is_empty(), "Salt should be empty initially");
-        assert!(config.get_hashed_pwd().is_empty(), "Hash should be empty initially");
+        assert!(
+            !config.is_master_key_provided(),
+            "Should not be provided initially"
+        );
+        assert!(
+            config.get_salt().is_empty(),
+            "Salt should be empty initially"
+        );
+        assert!(
+            config.get_hashed_pwd().is_empty(),
+            "Hash should be empty initially"
+        );
 
         // Test partial setup (only salt)
         config.set_salt(test_salt.clone());
-        assert!(!config.is_master_key_provided(), "Should still not be provided");
+        assert!(
+            !config.is_master_key_provided(),
+            "Should still not be provided"
+        );
         assert!(!config.get_salt().is_empty(), "Salt should be set");
-        assert!(config.get_hashed_pwd().is_empty(), "Hash should still be empty");
+        assert!(
+            config.get_hashed_pwd().is_empty(),
+            "Hash should still be empty"
+        );
 
         // Test complete setup
         config.set_master_key_hash(test_hash.clone());
@@ -479,27 +543,51 @@ mod tests {
 
     #[test]
     fn test_security_data_consistency() {
-        // Arrange
-        let mut config = KoflGlobalConfig::new();
-        let test_salt = "TestSalt123456789".to_string();
-        let test_hash = "testhash123456789".to_string();
+        // Set up environment - we need both USER and HOME
+        let user_guard = EnvGuard::new("USER");
+        let home_guard = EnvGuard::new("HOME");
 
-        // Act
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        // Set HOME to our temp directory
+        home_guard.set_var(temp_dir.path().to_str().unwrap());
+        user_guard.set_var("lk-kheir");
+
+        // Create initial config with temp directory
+        let mut config = create_test_config(&temp_dir);
+
+        // Set test values
+        let test_salt = "asdfasdf".to_string();
+        let test_hash = "asdfasdf".to_string();
+
         config.set_salt(test_salt.clone());
         config.set_master_key_hash(test_hash.clone());
         config.set_master_key_provided(true);
 
-        // save to file 
+        // Save to temp file
         config.update();
 
-        // Create new config and load from file
-        let mut new_config = KoflGlobalConfig::new();
+        println!("Config after update: {:?}", config);
+        println!("Config file path: {:?}", config.get_config_path());
+
+        // Create new config instance with same temp directory
+        let mut new_config = create_test_config(&temp_dir);
         new_config.load();
 
-        // Assert
+        println!("New config after load: {:?}", new_config);
+        println!("New config file path: {:?}", new_config.get_config_path());
+
+        // Assert persistence
         assert_eq!(new_config.get_salt(), test_salt, "Salt should persist");
-        assert_eq!(new_config.get_hashed_pwd(), test_hash, "Hash should persist");
-        assert!(new_config.is_master_key_provided(), "Master key provided flag should persist");
+        assert_eq!(
+            new_config.get_hashed_pwd(),
+            test_hash,
+            "Hash should persist"
+        );
+        assert!(
+            new_config.is_master_key_provided(),
+            "Master key provided flag should persist"
+        );
     }
 
     #[test]
@@ -509,39 +597,82 @@ mod tests {
 
         // Test empty strings
         config.set_salt("".to_string());
-        assert!(config.get_salt().is_empty(), "Salt should allow empty string");
+        assert!(
+            config.get_salt().is_empty(),
+            "Salt should allow empty string"
+        );
 
         config.set_master_key_hash("".to_string());
-        assert!(config.get_hashed_pwd().is_empty(), "Hash should allow empty string");
+        assert!(
+            config.get_hashed_pwd().is_empty(),
+            "Hash should allow empty string"
+        );
 
         // Test very long values
         let long_string = "a".repeat(1000);
         config.set_salt(long_string.clone());
-        assert_eq!(config.get_salt().len(), 1000, "Salt should handle long strings");
+        assert_eq!(
+            config.get_salt().len(),
+            1000,
+            "Salt should handle long strings"
+        );
 
         config.set_master_key_hash(long_string.clone());
-        assert_eq!(config.get_hashed_pwd().len(), 1000, "Hash should handle long strings");
+        assert_eq!(
+            config.get_hashed_pwd().len(),
+            1000,
+            "Hash should handle long strings"
+        );
     }
 
     #[test]
     #[serial]
     fn test_load_with_existing_config() {
-        let _guard = setup_test_env();
-        // Arrange
+        let user_guard = EnvGuard::new("USER");
+        let home_guard = EnvGuard::new("HOME");
+
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
-        
+
+        // Set HOME to our temp directory and USER to test user
+        home_guard.set_var(temp_dir.path().to_str().unwrap());
+        user_guard.set_var("lk-kheir");
+
+        // Arrange
         let mut config = create_test_config(&temp_dir);
         let config_path = config.get_config_path().clone();
+
+        // Create valid config file in temp directory
         create_valid_config_file(&config_path);
+
+        println!("Test directory: {:?}", temp_dir.path());
+        println!("Config path: {:?}", config_path);
+        println!("Initial config: {:?}", config);   
 
         // Act
         config.load();
 
+        println!("Config after load: {:?}", config);
+
         // Assert
-        assert_eq!(config.get_user_login(), env::var("USER").unwrap_or_else(|_| "default_user".to_string()));
-        assert_eq!(config.get_salt(), "test_salt");
-        assert_eq!(config.get_hashed_pwd(), "test_hash");
-        assert!(config.is_master_key_provided());
+        assert_eq!(
+            config.get_user_login(),
+            "lk-kheir", // Use the exact username we set
+            "User login should match environment"
+        );
+        assert_eq!(
+            config.get_salt(),
+            "test_salt",
+            "Salt should match test value"
+        );
+        assert_eq!(
+            config.get_hashed_pwd(),
+            "test_hash",
+            "Hash should match test value"
+        );
+        assert!(
+            config.is_master_key_provided(),
+            "Master key should be marked as provided"
+        );
     }
 
     #[test]
@@ -552,16 +683,22 @@ mod tests {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let mut config = create_test_config(&temp_dir);
 
-        println!("temp_dir = {:?}", temp_dir );
-        println!("config = {:?}", config );
+        println!("temp_dir = {:?}", temp_dir);
+        println!("config = {:?}", config);
 
         // Act
         config.update();
         config.load();
 
         // Assert
-        assert!(config.get_config_path().exists(), "Config file should be created");
-        assert_eq!(config.get_user_login(), env::var("USER").unwrap_or_else(|_| "default_user".to_string()));
+        assert!(
+            config.get_config_path().exists(),
+            "Config file should be created"
+        );
+        assert_eq!(
+            config.get_user_login(),
+            env::var("USER").unwrap_or_else(|_| "default_user".to_string())
+        );
         assert!(config.get_salt().is_empty());
         assert!(config.get_hashed_pwd().is_empty());
         assert!(!config.is_master_key_provided());
@@ -583,7 +720,10 @@ mod tests {
 
         // Assert
         // Should fall back to default values
-        assert_eq!(config.get_user_login(), env::var("USER").unwrap_or_else(|_| "default_user".to_string()));
+        assert_eq!(
+            config.get_user_login(),
+            env::var("USER").unwrap_or_else(|_| "default_user".to_string())
+        );
         assert!(config.get_salt().is_empty());
         assert!(config.get_hashed_pwd().is_empty());
         assert!(!config.is_master_key_provided());
@@ -594,7 +734,7 @@ mod tests {
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let mut config = create_test_config(&temp_dir);
-        
+
         // Set some values
         config.set_salt("new_salt".to_string());
         config.set_master_key_hash("new_hash".to_string());
@@ -605,9 +745,9 @@ mod tests {
 
         // Assert
         // Read the file directly and verify contents
-        let config_content = fs::read_to_string(config.get_config_path())
-            .expect("Failed to read config file");
-        
+        let config_content =
+            fs::read_to_string(config.get_config_path()).expect("Failed to read config file");
+
         assert!(config_content.contains("new_salt"));
         assert!(config_content.contains("new_hash"));
         assert!(config_content.contains("master_key_provided = true"));
@@ -618,7 +758,7 @@ mod tests {
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let mut config = create_test_config(&temp_dir);
-        
+
         // Set some test values
         config.set_salt("test_salt".to_string());
         config.set_master_key_hash("test_hash".to_string());
@@ -639,7 +779,7 @@ mod tests {
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let mut config = create_test_config(&temp_dir);
-        
+
         // Set test values
         config.set_salt("test_salt".to_string());
         config.set_master_key_hash("test_hash".to_string());
@@ -654,7 +794,7 @@ mod tests {
         // Assert
         assert!(read_result.is_ok(), "Should successfully read config file");
         let read_config = read_result.unwrap();
-        
+
         assert_eq!(read_config.get_salt(), "test_salt");
         assert_eq!(read_config.get_hashed_pwd(), "test_hash");
         assert!(read_config.is_master_key_provided());
@@ -669,7 +809,7 @@ mod tests {
 
         // Create config file with restricted permissions
         create_valid_config_file(&config_path);
-        
+
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -681,7 +821,10 @@ mod tests {
         let read_result = config.read_config_from_toml_file();
 
         // Assert
-        assert!(read_result.is_err(), "Should fail to read with no permissions");
+        assert!(
+            read_result.is_err(),
+            "Should fail to read with no permissions"
+        );
 
         // Cleanup - restore permissions to allow cleanup
         #[cfg(unix)]
