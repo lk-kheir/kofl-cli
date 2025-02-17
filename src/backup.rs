@@ -1,4 +1,7 @@
-use crate::utils::Utils::{get_backup_dir, get_home_dir};
+use crate::{
+    db::Db::Entry,
+    utils::Utils::{get_backup_dir, get_home_dir},
+};
 use chrono::{DateTime, Utc};
 use std::{fs, path::PathBuf};
 
@@ -22,7 +25,12 @@ impl Backup {
         })
     }
 
-    pub fn create_new_backup(&self, kgc_file: &PathBuf, db_file: &PathBuf, checksumfile: &PathBuf) -> Result<(), std::io::Error> {
+    pub fn create_new_backup(
+        &self,
+        kgc_file: &PathBuf,
+        db_file: &PathBuf,
+        checksumfile: &PathBuf,
+    ) -> Result<(), std::io::Error> {
         // Format directory name as YYYY-MM-DD_HH_MM_SS
         let dir_name = Utc::now().format("%Y-%m-%d_%H_%M_%S").to_string();
 
@@ -40,8 +48,32 @@ impl Backup {
         Ok(())
     }
 
-    
+    pub fn get_last_backup(&self) -> std::io::Result<Option<PathBuf>> {
+        let mut entries = fs::read_dir(&self.backup_dir)?
+            .filter_map(|e| e.ok())
+            .inspect(|entry| println!("{:?}", entry.path()))
+            .collect::<Vec<_>>();
+
+        entries.sort_by_key(|dir| dir.metadata().and_then(|m| m.modified()).ok());
+
+        if let Some(last_entry) = entries.last() {
+            // println!("Last backup directory: {:?}", last_entry.file_name());
+            // println!("Path: {:?}", last_entry.path());
+            // println!("Modified: {:?}", last_entry.metadata()?.modified()?);
+
+            // Print files inside the last backup directory
+            for entry in fs::read_dir(last_entry.path())? {
+                let file = entry?;
+                println!("{:?}", file.path());
+            }
+
+            return Ok(Some(last_entry.path()));
+        }
+
+        Ok(None)
+    }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -76,7 +108,6 @@ mod tests {
             }
         }
     }
-
 
     fn create_test_files(temp_dir: &TempDir) -> (PathBuf, PathBuf, PathBuf) {
         let kgc_file = temp_dir.path().join(".kofl");
@@ -130,11 +161,48 @@ mod tests {
     }
 
     #[test]
+    fn test_get_last_backup() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let backup_dir = temp_dir.path().join("backups");
+        
+        let backup = Backup {
+            backup_dir: backup_dir.clone(),
+            backup_empty: true,
+        };
+
+        let (kgc_file, db_file, checksum_file) = create_test_files(&temp_dir);
+        let (kgc_file1, db_file1, checksum_file1) = create_test_files(&temp_dir);
+
+        // Act
+        let result = backup.create_new_backup(&kgc_file, &db_file, &checksum_file);
+        assert!(result.is_ok(), "First backup creation should succeed");
+
+        std::thread::sleep(std::time::Duration::from_secs(1)); // Ensure different timestamp
+
+        let result1 = backup.create_new_backup(&kgc_file1, &db_file1, &checksum_file1);
+        assert!(result1.is_ok(), "Second backup creation should succeed");
+
+        let last_backup_path = backup.get_last_backup().expect("Failed to get last backup");
+
+        // Assert
+        let entries = fs::read_dir(&backup_dir).unwrap().collect::<Vec<_>>();
+        assert_eq!(entries.len(), 2, "There should be two backup directories");
+
+        // Check if the last backup path is correct
+        assert!(last_backup_path.is_some(), "Last backup path should exist");
+        let last_backup_path = last_backup_path.unwrap();
+        assert!(last_backup_path.exists(), "Last backup path should exist on the filesystem");
+
+        // Print the last backup directory for verification
+        println!("Last backup directory: {:?}", last_backup_path);
+    }
+
+    #[test]
     fn test_create_new_backup_success() {
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let backup_dir = temp_dir.path().join("backups");
-        
+
         let backup = Backup {
             backup_dir: backup_dir.clone(),
             backup_empty: true,
@@ -147,11 +215,11 @@ mod tests {
 
         // Assert
         assert!(result.is_ok(), "Backup creation should succeed");
-        
+
         // Check if backup directory exists
         let backup_dirs = fs::read_dir(&backup_dir).unwrap();
         let backup_dir_entry = backup_dirs.into_iter().next().unwrap().unwrap();
-        
+
         // Verify directory name format
         let dir_name = backup_dir_entry.file_name();
         let dir_name_str = dir_name.to_str().unwrap();
@@ -161,9 +229,18 @@ mod tests {
 
         // Verify files exist and content matches
         let backup_path = backup_dir_entry.path();
-        assert!(backup_path.join(".kofl").exists(), "Config file should exist in backup");
-        assert!(backup_path.join("kofl.sqlite").exists(), "Database file should exist in backup");
-        assert!(backup_path.join(".kofl.checksum").exists(), "Checksum file should exist in backup");
+        assert!(
+            backup_path.join(".kofl").exists(),
+            "Config file should exist in backup"
+        );
+        assert!(
+            backup_path.join("kofl.sqlite").exists(),
+            "Database file should exist in backup"
+        );
+        assert!(
+            backup_path.join(".kofl.checksum").exists(),
+            "Checksum file should exist in backup"
+        );
 
         // Verify content
         assert_eq!(
@@ -185,7 +262,7 @@ mod tests {
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let backup_dir = temp_dir.path().join("backups");
-        
+
         let backup = Backup {
             backup_dir: backup_dir.clone(),
             backup_empty: true,
@@ -194,14 +271,14 @@ mod tests {
         let nonexistent_file = temp_dir.path().join("nonexistent");
 
         // Act
-        let result = backup.create_new_backup(
-            &nonexistent_file,
-            &nonexistent_file,
-            &nonexistent_file
-        );
+        let result =
+            backup.create_new_backup(&nonexistent_file, &nonexistent_file, &nonexistent_file);
 
         // Assert
-        assert!(result.is_err(), "Backup should fail with missing source files");
+        assert!(
+            result.is_err(),
+            "Backup should fail with missing source files"
+        );
     }
 
     #[test]
@@ -209,7 +286,7 @@ mod tests {
         // Arrange
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let backup_dir = temp_dir.path().join("backups");
-        
+
         let backup = Backup {
             backup_dir: backup_dir.clone(),
             backup_empty: false,
@@ -218,29 +295,34 @@ mod tests {
         let (kgc_file, db_file, checksum_file) = create_test_files(&temp_dir);
 
         // Create first backup
-        backup.create_new_backup(&kgc_file, &db_file, &checksum_file).unwrap();
-        
+        backup
+            .create_new_backup(&kgc_file, &db_file, &checksum_file)
+            .unwrap();
+
         // Wait a second to ensure different timestamp
         std::thread::sleep(std::time::Duration::from_secs(1));
-        
+
         // Create second backup
         let result = backup.create_new_backup(&kgc_file, &db_file, &checksum_file);
 
         // Assert
         assert!(result.is_ok(), "Second backup should succeed");
-        
+
         // Check if both backups exist
         let backup_dirs: Vec<_> = fs::read_dir(&backup_dir)
             .unwrap()
             .map(|entry| entry.unwrap())
             .collect();
-        
+
         assert_eq!(backup_dirs.len(), 2, "Should have two backup directories");
-        
+
         // Verify different timestamps
         let first_backup = backup_dirs[0].file_name().into_string().unwrap();
         let second_backup = backup_dirs[1].file_name().into_string().unwrap();
-        assert_ne!(first_backup, second_backup, "Backup directories should have different timestamps");
+        assert_ne!(
+            first_backup, second_backup,
+            "Backup directories should have different timestamps"
+        );
     }
 
     #[test]
@@ -249,11 +331,11 @@ mod tests {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            
+
             // Arrange
             let temp_dir = TempDir::new().expect("Failed to create temp dir");
             let backup_dir = temp_dir.path().join("backups");
-            
+
             fs::create_dir(&backup_dir).unwrap();
             fs::set_permissions(&backup_dir, fs::Permissions::from_mode(0o444)).unwrap();
 
@@ -268,8 +350,11 @@ mod tests {
             let result = backup.create_new_backup(&kgc_file, &db_file, &checksum_file);
 
             // Assert
-            assert!(result.is_err(), "Backup should fail with read-only directory");
-            
+            assert!(
+                result.is_err(),
+                "Backup should fail with read-only directory"
+            );
+
             // Cleanup - restore permissions to allow cleanup
             fs::set_permissions(&backup_dir, fs::Permissions::from_mode(0o755)).unwrap();
         }
