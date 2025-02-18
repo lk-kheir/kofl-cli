@@ -1,10 +1,6 @@
 TODO
     ==> continue working on the case of the config file has been changed
     ==> possibly do the same for session file
-    ==> add unit test for checksum operations
-    ==> update destory command to include .checksum files
-
-
 
 
 AI RECOMMENDATIONS

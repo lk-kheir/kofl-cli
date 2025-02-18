@@ -86,7 +86,7 @@ pub mod Config {
             self.master_key_provided
         }
 
-        fn get_config_checksum(&self) -> String {
+        pub fn get_config_checksum(&self) -> String {
             let content =
                 fs::read_to_string(self.get_config_path()).unwrap_or_else(|_| String::new());
 
@@ -121,8 +121,8 @@ pub mod Config {
                 Ok(config) => {
                     *self = config;
                     // create a backup for now this is only for testing;
-                    let bc = Backup::new().unwrap();
-                    bc.create_new_backup(&self.get_config_path(), &self.get_data_storage_path(), &self.get_config_path().with_extension("checksum"));
+                    // let bc = Backup::new().unwrap();
+                    // bc.create_new_backup(&self.get_config_path(), &self.get_data_storage_path(), &self.get_config_path().with_extension("checksum"));
 
                 },
                 Err(e) => {
@@ -290,6 +290,37 @@ mod tests {
             "#;
         fs::write(path, invalid_content).expect("Failed to write invalid test config file");
     }
+
+
+    #[test]
+    #[serial]
+    fn test_verify_integrity()
+    {
+        let _guard = EnvGuard::new("USER");
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        let config = KoflGlobalConfig::new();
+
+        std::fs::write(config.get_config_path(), String::from("test"));
+
+        //println!("content is {}", std::fs::read_to_string(config.get_config_path()).unwrap());
+
+        let res_check_sum = config.get_config_checksum();
+
+        // println!("{}", res_check_sum);
+        assert_eq!("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", res_check_sum);
+
+
+        // simlate the modif of a file
+
+        std::fs::write(config.get_config_path(), String::from("testAgain"));
+        let res_check_sum = config.get_config_checksum();
+        // println!("{}", res_check_sum);
+        assert_ne!("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", res_check_sum);
+
+
+    }
+
 
     #[test]
     #[serial]

@@ -59,12 +59,13 @@ impl Command for DestroyCmd {
         let data_path = binding.get_data_storage_path();
         let config_path = binding.get_config_path();
         let session_path = context.ss.get_session_path();
+        let cheksum_path = config_path.with_extension("checksum");
         
         // debug!("{}", data_path.display());
         // debug!("{}", config_path.display());
         // debug!("{}", session_path.display());
+        // debug!("{}", cheksum_path.display());
 
-        // remove the db;
         match fs::remove_file(&data_path) {
             Ok(_) => (),
             Err(err) => {
@@ -88,6 +89,16 @@ impl Command for DestroyCmd {
             }
         }
 
+        match fs::remove_file(cheksum_path) {
+            Ok(_) => (),
+            Err(err) => {
+                error!("Failed to remove checksum file: {}", err);
+                return false;
+            }
+        }
+
+
+        // later to be decided if we want to remove backup or not
 
         info!("\nAll data related to Kofl configuration have been deleted.\nRun init to start again");
 
