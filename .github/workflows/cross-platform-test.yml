@@ -1,0 +1,49 @@
+name: Cross-Platform Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Install Rust toolchain
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    # Cache dependencies
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    # Build and test on Linux
+    - name: Build and test (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        docker build -t rust-cnt .
+        docker run rust-cnt cargo test
+
+    # Build and test on Windows
+    - name: Build and test (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cargo build --release
+        cargo test
