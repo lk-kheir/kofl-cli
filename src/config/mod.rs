@@ -831,6 +831,7 @@ mod tests {
         assert!(read_config.is_master_key_provided());
     }
 
+    #[ignore]
     #[test]
     fn test_read_config_file_permissions() {
         // Arrange

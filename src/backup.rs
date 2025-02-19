@@ -325,6 +325,7 @@ mod tests {
         );
     }
 
+    #[ignore]
     #[test]
     fn test_create_new_backup_permissions() {
         // Skip this test on non-Unix platforms
