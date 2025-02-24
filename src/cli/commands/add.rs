@@ -1,3 +1,4 @@
+use crate::backup::Backup;
 use crate::cli::Command;
 use crate::validator::core::{ValidationType, ValidationResult};
 use crate::validator::registry::ValidationRegistry;
@@ -94,6 +95,13 @@ impl Command for AddCmd {
                 return false;
             }
         }
+
+
+        let bc = Backup::new().unwrap();
+
+        bc.create_new_backup(&context.kgc.borrow().get_config_path(), 
+        &context.kgc.borrow().get_data_storage_path(), 
+        &context.kgc.borrow().get_config_path().with_extension("checksum")).unwrap();
 
         true
     }
