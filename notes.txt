@@ -1,5 +1,6 @@
 TODO
-    ==> continue working on the case of the config file has been changed
+    ==> start to implement a backup plan after verify integrity returns false, 
+    retreive last backup and remove corrupt file
     ==> possibly do the same for session file
 
 

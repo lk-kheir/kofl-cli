@@ -1,13 +1,14 @@
 pub mod Config {
 
-    use crate::utils::Utils::{check_existing_config, get_config_path, get_home_dir};
     use crate::backup::Backup;
-    use log::{debug, error};
+    use crate::utils::Utils::{check_existing_config, get_config_path, get_home_dir};
+    use log::{debug, error, info};
     use serde::{Deserialize, Serialize};
     use sha2::{Digest, Sha256};
     use std::env;
     use std::fmt::Debug;
     use std::fs;
+    use std::os::unix::fs::DirBuilderExt;
     use std::path::PathBuf;
     use toml;
 
@@ -106,6 +107,44 @@ pub mod Config {
             false
         }
 
+        pub fn remove_files(
+            self,
+            config_path: &PathBuf,
+            data_path: &PathBuf,
+            session_path: &PathBuf,
+            checksum_path: PathBuf,
+        ) -> bool {
+            match fs::remove_file(data_path) {
+                Ok(_) => (),
+                Err(err) => {
+                    error!("Failed to remove data storage file: {}", err);
+                    return false;
+                }
+            }
+            match fs::remove_file(config_path) {
+                Ok(_) => (),
+                Err(err) => {
+                    error!("Failed to remove configuration file: {}", err);
+                    return false;
+                }
+            }
+            match fs::remove_file(session_path) {
+                Ok(_) => (),
+                Err(err) => {
+                    error!("Failed to remove session file: {}", err);
+                    return false;
+                }
+            }
+            match fs::remove_file(checksum_path) {
+                Ok(_) => (),
+                Err(err) => {
+                    error!("Failed to remove checksum file: {}", err);
+                    return false;
+                }
+            }
+            true
+        }
+
         pub fn load(&mut self) {
             if !check_existing_config() {
                 println!("no existing config");
@@ -114,7 +153,53 @@ pub mod Config {
             }
 
             if !self.verify_integrity() {
-                error!("Config file integrity check failed! Possible tampering detected.");
+                error!(
+                    "\n
+                Config file integrity check failed! Possible tampering detected.
+                The default backup will be implemented,
+                The program will retrieve the last backup added
+                and replace currents configs, with onces from a backup,
+                in ideal case no data should be lost.
+                "
+                );
+
+                // I should later decide what's gonna happen if no backup found.
+                let bc = Backup::new().unwrap();
+
+                match bc.get_last_backup().unwrap() {
+                    Some(DirBuilderExt) => info!("backup dir was found"),
+                    None => {
+                        info!(
+                            "\n
+                    No backup plan, means there is no password entries were added,
+                    the system will delete all cofig files run `kofl init` to reinitailise again.
+                    "
+                        );
+
+                        match fs::remove_file(self.get_data_storage_path()) {
+                            Ok(_) => (),
+                            Err(err) => {
+                                error!("Failed to remove data storage file: {}", err);
+                            }
+                        }
+                        match fs::remove_file(self.get_config_path()) {
+                            Ok(_) => (),
+                            Err(err) => {
+                                error!("Failed to remove kofl configuration file: {}", err);
+                            }
+                        }
+
+                        match fs::remove_file(self.get_config_path().with_extension("checksum")) {
+                            Ok(_) => (),
+                            Err(err) => {
+                                error!("Failed to remove checksum file: {}", err);
+                            }
+                        }
+                    }
+                }
+
+                std::process::exit(1);
+                // return;
             }
 
             match self.read_config_from_toml_file() {
@@ -123,8 +208,7 @@ pub mod Config {
                     // create a backup for now this is only for testing;
                     // let bc = Backup::new().unwrap();
                     // bc.create_new_backup(&self.get_config_path(), &self.get_data_storage_path(), &self.get_config_path().with_extension("checksum"));
-
-                },
+                }
                 Err(e) => {
                     error!("Failed to load config: {}", e);
                     // Handle error appropriately
@@ -291,11 +375,9 @@ mod tests {
         fs::write(path, invalid_content).expect("Failed to write invalid test config file");
     }
 
-
     #[test]
     #[serial]
-    fn test_verify_integrity()
-    {
+    fn test_verify_integrity() {
         let _guard = EnvGuard::new("USER");
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
 
@@ -308,19 +390,21 @@ mod tests {
         let res_check_sum = config.get_config_checksum();
 
         // println!("{}", res_check_sum);
-        assert_eq!("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", res_check_sum);
-
+        assert_eq!(
+            "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            res_check_sum
+        );
 
         // simlate the modif of a file
 
         std::fs::write(config.get_config_path(), String::from("testAgain"));
         let res_check_sum = config.get_config_checksum();
         // println!("{}", res_check_sum);
-        assert_ne!("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", res_check_sum);
-
-
+        assert_ne!(
+            "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            res_check_sum
+        );
     }
-
 
     #[test]
     #[serial]
@@ -677,7 +761,7 @@ mod tests {
 
         println!("Test directory: {:?}", temp_dir.path());
         println!("Config path: {:?}", config_path);
-        println!("Initial config: {:?}", config);   
+        println!("Initial config: {:?}", config);
 
         // Act
         config.load();

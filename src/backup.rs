@@ -3,6 +3,7 @@ use crate::{
     utils::Utils::{get_backup_dir, get_home_dir},
 };
 use chrono::{DateTime, Utc};
+use log::debug;
 use std::{fs, path::PathBuf};
 
 pub struct Backup {
@@ -21,7 +22,7 @@ impl Backup {
 
         Ok(Backup {
             backup_dir,
-            backup_empty: false,
+            backup_empty: false, // I should set this later to true, but do I even need this ?
         })
     }
 
@@ -51,7 +52,7 @@ impl Backup {
     pub fn get_last_backup(&self) -> std::io::Result<Option<PathBuf>> {
         let mut entries = fs::read_dir(&self.backup_dir)?
             .filter_map(|e| e.ok())
-            .inspect(|entry| println!("{:?}", entry.path()))
+            .inspect(|entry| debug!("{:?}", entry.path()))
             .collect::<Vec<_>>();
 
         entries.sort_by_key(|dir| dir.metadata().and_then(|m| m.modified()).ok());
@@ -64,7 +65,7 @@ impl Backup {
             // Print files inside the last backup directory
             for entry in fs::read_dir(last_entry.path())? {
                 let file = entry?;
-                println!("{:?}", file.path());
+                debug!("{:?}", file.path());
             }
 
             return Ok(Some(last_entry.path()));
