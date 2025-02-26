@@ -167,7 +167,14 @@ pub mod Config {
                 let bc = Backup::new().unwrap();
 
                 match bc.get_last_backup().unwrap() {
-                    Some(DirBuilderExt) => info!("backup dir was found"),
+                    Some(backup_dir_path) => { 
+                        debug!("A backup dir was found, starting a new backup");
+                        debug!("{:?}", backup_dir_path.display());
+
+                        
+
+                        std::process::exit(1);
+                    },
                     None => {
                         info!(
                             "\n
