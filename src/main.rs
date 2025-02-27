@@ -15,7 +15,7 @@ mod constants;
 // Updated imports for the commands
 use clap::{Parser, Subcommand};
 // Import commands from the new location
-use cli::commands::{AddCmd, GetCmd, InitCmd, LogInCmd, DestroyCmd}; // Updated path
+use cli::commands::{AddCmd, DestroyCmd, GetCmd, InitCmd, LogInCmd, UpdateCmd}; // Updated path
 use cli::Command; // Import the Command trait from cli module
 use colored::*;
 use context::Context;
@@ -39,6 +39,7 @@ enum Commands {
     Destroy {},
     Add { name: String},
     Get { ent_name: String },
+    Update {ent_name: String}
 }
 
 
@@ -119,6 +120,11 @@ fn main() {
             let pwd = rpassword::prompt_password("Enter the password for the entry ===> ").unwrap();
             let add_command = AddCmd::new(name.to_string(), pwd);
             execute_command(&add_command, &context);
+        }
+        Commands::Update { ent_name} => {
+            let pwd = rpassword::prompt_password("Update the password for the entry ===> ").unwrap();
+            let update_command = UpdateCmd::new(ent_name.to_string(), pwd);
+            execute_command(&update_command, &context);
         }
         Commands::Get { ent_name } => {
             let get_command = GetCmd::new(ent_name.to_string());

@@ -2,7 +2,7 @@
 
 use crate::validator::core::{Validator, ValidationResult};
 use crate::context::Context;
-use crate::cli::commands::{DestroyCmd, GetCmd, LogInCmd, AddCmd};
+use crate::cli::commands::{AddCmd, DestroyCmd, GetCmd, LogInCmd, UpdateCmd};
 
 pub struct SessionValidator {}
 
@@ -19,6 +19,17 @@ impl Validator<GetCmd> for SessionValidator {
 
 impl Validator<AddCmd> for SessionValidator {
     fn validate(&self, context: &Context, _cmd: &AddCmd) -> ValidationResult {
+        log::debug!("Running SessionValidator");
+        if !context.ss.check_if_expired() {
+            ValidationResult::Success
+        } else {
+            ValidationResult::Failure("Session expired ⛔".to_string())
+        }
+    }
+}
+
+impl Validator<UpdateCmd> for SessionValidator {
+    fn validate(&self, context: &Context, _cmd: &UpdateCmd) -> ValidationResult {
         log::debug!("Running SessionValidator");
         if !context.ss.check_if_expired() {
             ValidationResult::Success

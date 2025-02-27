@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use crate::validator::core::{ValidationType, Validator};
-use crate::cli::commands::{AddCmd, DestroyCmd, GetCmd, InitCmd, LogInCmd};
+use crate::cli::commands::{AddCmd, DestroyCmd, GetCmd, InitCmd, LogInCmd, UpdateCmd};
 
 use crate::validator::master_key::MasterKeyValidator;
 use crate::validator::session::SessionValidator;
@@ -62,6 +62,19 @@ impl ValidationRegistry<AddCmd> {
         validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}));
         validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}));
         validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}));
+        validators.insert(ValidationType::PasswordRequirementCheck, Box::new(PasswordRequirementValidator {}));
+        Self { validators }
+    }
+}
+
+
+
+impl ValidationRegistry<UpdateCmd> {
+    pub fn new() -> Self {
+        let mut validators: HashMap<ValidationType, Box<dyn Validator<UpdateCmd>>> = HashMap::new();
+        validators.insert(ValidationType::SessionCheck, Box::new(SessionValidator {}));
+        validators.insert(ValidationType::MasterKeyCheck, Box::new(MasterKeyValidator {}));
+        validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}));
         validators.insert(ValidationType::PasswordRequirementCheck, Box::new(PasswordRequirementValidator {}));
         Self { validators }
     }
