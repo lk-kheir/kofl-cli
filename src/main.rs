@@ -9,6 +9,7 @@ mod errors;
 mod session;
 mod utils;
 mod validator;
+mod constants;
 
 
 // Updated imports for the commands

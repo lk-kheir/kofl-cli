@@ -7,7 +7,7 @@ pub enum ValidationType {
     RateLimitCheck,
     EntryExistsCheck,
     DuplicateEntryCheck,
-    // more to come later
+    PasswordRequirementCheck,
 }
 
 pub enum CommandType {

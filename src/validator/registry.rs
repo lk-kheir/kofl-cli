@@ -10,6 +10,8 @@ use crate::validator::rate_limit::RateLimitValidator;
 use crate::validator::entry_exists::EntryExistsValidator;
 use crate::validator::duplicate::DuplicateEntryValidator;
 
+use super::pwd_req::PasswordRequirementValidator;
+
 pub struct ValidationRegistry<T> {
     pub validators: HashMap<ValidationType, Box<dyn Validator<T>>>,
 }
@@ -60,6 +62,7 @@ impl ValidationRegistry<AddCmd> {
         validators.insert(ValidationType::RateLimitCheck, Box::new(RateLimitValidator {}));
         validators.insert(ValidationType::EntryExistsCheck, Box::new(EntryExistsValidator {}));
         validators.insert(ValidationType::DuplicateEntryCheck, Box::new(DuplicateEntryValidator {}));
+        validators.insert(ValidationType::PasswordRequirementCheck, Box::new(PasswordRequirementValidator {}));
         Self { validators }
     }
 }

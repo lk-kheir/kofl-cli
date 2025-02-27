@@ -1,79 +1,43 @@
-TODO
-    ==> start to implement a backup plan after verify integrity returns false, 
-    retreive last backup and remove corrupt file
-    ==> possibly do the same for session file
+# Password Complexity Requirements
 
+## Minimum Length
+- Passwords should have a minimum length of at least 8 characters.
 
-AI RECOMMENDATIONS
-    After detecting tampering, here's what I recommend the system should do (in order of priority):
+## Character Variety
+- Passwords should include a mix of different character types:
+  - **Uppercase Letters**: At least one uppercase letter (A-Z).
+  - **Lowercase Letters**: At least one lowercase letter (a-z).
+  - **Digits**: At least one digit (0-9).
+  - **Special Characters**: At least one special character (e.g., !, @, #, $, etc.).
 
-    Immediate Actions:
+## No Common Passwords
+- Passwords should not be among the list of commonly used passwords (e.g., "password", "123456", "qwerty").
 
-    Log the incident with timestamp (you already have UTC time: 2025-02-16 12:27:17)
-    Log the user (lk-kheir) who attempted to load the tampered config
-    Block access to the configuration
-    Recovery Process:
+## No Repeated Characters
+- Passwords should not have a sequence of repeated characters (e.g., "aaaa", "1111").
 
-    Create a backup of the tampered file (for investigation)
-    Try to restore from the most recent valid backup
-    If no backup exists, initialize a new clean configuration
-    User Notification:
+## No User Information
+- Passwords should not contain user-specific information such as username, email, or other identifiable information.
 
-    Display a clear warning message
-    Explain what happened (tampering detected)
-    Explain what action was taken (restored from backup or reset)
-    Request user to verify their credentials
-    Security Response:
+## Password History
+- Users should not be able to reuse their previous passwords (e.g., last 5 passwords should be remembered).
 
-    Require re-authentication
-    Force password reset
-    Create new salt for security
-    Reset master key provided status
-    This approach:
+## Dictionary Check
+- Passwords should not be simple dictionary words or easily guessable phrases.
 
-    Preserves evidence of tampering
-    Protects user data
-    Maintains security
-    Provides clear user communication
-    Has a clear recovery path
+## Prohibited Patterns
+- Passwords should not follow common patterns (e.g., "abc123", "password1").
 
+## Additional Considerations
 
+### Feedback
+- Provide real-time feedback to users as they create their password, indicating which complexity requirements are met and which are not.
 
-    This is a great question about handling the SQLite database in your security architecture. Here's how you should think about the kofl.sqlite database:
+### Strength Meter
+- Implement a password strength meter that visually indicates the strength of the password based on the complexity requirements.
 
-    Database Security Concerns:
+### Error Messages
+- Provide clear and informative error messages when a password does not meet the complexity requirements.
 
-    Database contains sensitive password data
-    Needs same (or higher) protection as config
-    Must maintain consistency with config file
-    Requires its own backup strategy
-    Database-Config Relationship:
-
-    Config file stores settings/metadata
-    SQLite file stores actual password data
-    Both must be in sync
-    Both need integrity checks
-    Synchronization Strategy:
-
-    When backing up config, backup DB too
-    Database backups should be timestamped (2025-02-16_12_35_31)
-    Keep DB and config backups paired
-    Example backup structure:
-    Code
-    backups/
-    └── 2025-02-16_12_35_31/
-        ├── .kofl
-        ├── .kofl.checksum
-        └── kofl.sqlite
-    Database-Specific Considerations:
-
-    SQLite has built-in integrity checks
-    Can use SQLite WAL (Write-Ahead Logging)
-    Should implement database locking
-    Need to handle database corruption
-    Recovery Process:
-
-    Must restore both config AND database
-    Verify database integrity after restore
-    Handle partial recovery scenarios
-    Maintain data consistency
+### Configuration
+- Allow administrators to configure the complexity requirements, making it possible to adjust the criteria based on specific security policies.

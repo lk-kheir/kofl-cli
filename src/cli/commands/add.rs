@@ -19,7 +19,7 @@ use ctr::Ctr32BE;
 type Aes256Ctr = Ctr32BE<aes::Aes256>;
 pub struct AddCmd {
     pub name: String,
-    password: String,
+    pub password: String,
 }
 
 
@@ -66,7 +66,7 @@ impl Command for AddCmd {
         let key = GenericArray::from_slice(&master_key_bytes);
         let nonce = GenericArray::from_slice(&[0u8; 16]); // In production, use secure random nonce
 
-        // Initialize cipher
+        // Initialize ciph
         let mut cipher = Aes256Ctr::new(key, nonce);
 
         // Encrypt the password
@@ -114,6 +114,7 @@ impl Command for AddCmd {
             ValidationType::MasterKeyCheck,
             ValidationType::SessionCheck,
             ValidationType::EntryExistsCheck,
+            ValidationType::PasswordRequirementCheck,
         ];
 
 

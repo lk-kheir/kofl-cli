@@ -152,7 +152,9 @@ pub mod Config {
                 return;
             }
 
+            #[cfg(not(debug_assertions))]
             if !self.verify_integrity() {
+                debug!("calling verify integrity");
                 error!(
                     "\n
                 Config file integrity check failed! Possible tampering detected.
@@ -167,14 +169,12 @@ pub mod Config {
                 let bc = Backup::new().unwrap();
 
                 match bc.get_last_backup().unwrap() {
-                    Some(backup_dir_path) => { 
+                    Some(backup_dir_path) => {
                         debug!("A backup dir was found, starting a new backup");
                         debug!("{:?}", backup_dir_path.display());
 
-                        
-
                         std::process::exit(1);
-                    },
+                    }
                     None => {
                         info!(
                             "\n
