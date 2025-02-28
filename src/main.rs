@@ -104,10 +104,10 @@ fn execute_command<T: Command>(cmd: &T, context: &Context) {
         if cmd.execute(context) {
             cmd.display();
         } else {
-            error!("Error during execution");
+            debug!("Error during execution");
         }
     } else {
-        error!("Error during validation");
+        debug!("Error during validation");
     }
 }
 

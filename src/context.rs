@@ -64,7 +64,7 @@ impl Context {
                 debug!("Successfully loaded the session file.");
             }
             Err(SessionError::SessionFileMissingError) => {
-                warn!("Session config file missing, creating a new session.");
+                debug!("Session config file missing, creating a new session.");
                 if allow_recreation_of_session {
                     session = Session::new(user_login, true);
                     session.write_session_config_to_toml_file();
@@ -74,7 +74,7 @@ impl Context {
                 }
             }
             Err(SessionError::FailedLoadingError) => {
-                warn!("Failed to load the session details, creating a new session.");
+                debug!("Failed to load the session details, creating a new session.");
                 if allow_recreation_of_session {
                     session = Session::new(user_login, true);
                     session.write_session_config_to_toml_file();
@@ -84,7 +84,7 @@ impl Context {
                 }
             }
             Err(SessionError::ExpiredSession) => {
-                warn!("Session expired");
+                // warn!("Session expired");
                 // if the session is expired we should ask the user to login again.
                 // return Err(ErrorSetup::Session);
                 // session = Session::new(user_login);

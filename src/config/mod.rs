@@ -147,7 +147,7 @@ pub mod Config {
 
         pub fn load(&mut self) {
             if !check_existing_config() {
-                println!("no existing config");
+                debug!("no existing config");
                 self.write_config_to_toml_file();
                 return;
             }

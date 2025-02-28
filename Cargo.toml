@@ -1,5 +1,5 @@
 [features]
-default = ["dev"]
+default = ["prod"]
 dev = []
 prod = []
 
