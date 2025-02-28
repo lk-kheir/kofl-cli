@@ -34,15 +34,21 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(about = "Initialize the password manager by providing a Master Key")]
     Init {},
+    #[command(about = "Login to the password manager using the Master Key")]    
     Login {},
+    #[command(about = "Destroy the password manager data (configuration + database)")]
     Destroy {},
-    Add { 
+    #[command(about = "Add a new entry use --suggest flag to suggest a password")]
+    Add {
         name: String,
-        #[arg(short, long)]
+        #[arg(short, long,)]
         suggest: bool
     },
+    #[command(about = "Get the password of on entry by name")]
     Get { ent_name: String },
+    #[command(about = "Update the password of an existing entry")]
     Update {
         ent_name: String,
         #[arg(short, long)]
@@ -125,7 +131,7 @@ fn main() {
             execute_command(&init_command, &context);
         }
         Commands::Add { name, suggest   } => {
-            info!("add commend with name {} and suggest flag is set to {}", name , suggest);
+            //info!("add commend with name {} and suggest flag is set to {}", name , suggest);
             if (*suggest) {
                 let add_command = AddCmd::new(name.to_string(), String::from(""), *suggest);
                 execute_command(&add_command, &context);
@@ -136,9 +142,15 @@ fn main() {
             }
         }
         Commands::Update { ent_name, suggest} => {
-            let pwd = rpassword::prompt_password("Update the password for the entry ===> ").unwrap();
-            let update_command = UpdateCmd::new(ent_name.to_string(), pwd);
-            execute_command(&update_command, &context);
+
+            if (*suggest) {
+                let update_command = UpdateCmd::new(ent_name.to_string(), String::from(""), *suggest);
+                execute_command(&update_command, &context);
+            }else {
+                let pwd = rpassword::prompt_password("Enter the password for the entry ===> ").unwrap();
+                let update_command = UpdateCmd::new(ent_name.to_string(), pwd, *suggest);
+                execute_command(&update_command, &context);
+            }
         }
         Commands::Get { ent_name } => {
             let get_command = GetCmd::new(ent_name.to_string());

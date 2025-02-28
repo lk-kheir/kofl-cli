@@ -9,7 +9,7 @@ use crate::db::Db::Entry;
 use chrono::prelude::*;
 use log::{debug, info, warn, error};
 use sha2::Digest;
-
+use std::cell::Cell;
 
 use aes::cipher::{
     KeyIvInit, StreamCipher,
@@ -20,13 +20,16 @@ type Aes256Ctr = Ctr32BE<aes::Aes256>;
 pub struct UpdateCmd {
     pub name: String,
     pub password: String,
+    pub suggest_flag: bool,
+    pub suggested_pwd : Cell<String>,
 }
 
 
 impl  UpdateCmd {
-    pub fn new(name: String, password: String) -> UpdateCmd
+    pub fn new(name: String, password: String,  suggest_flag: bool) -> UpdateCmd
     {
-        UpdateCmd{name, password}
+        UpdateCmd{name, password,suggest_flag,
+            suggested_pwd: Cell::new(String::new()),}
     }
 }
 
@@ -70,7 +73,15 @@ impl Command for UpdateCmd {
         let mut cipher = Aes256Ctr::new(key, nonce);
 
         // Encrypt the password
-        let mut encrypted_password = self.password.clone().into_bytes();
+        let mut encrypted_password;
+
+        if (self.suggest_flag) {
+            encrypted_password = self.suggested_pwd.take().into_bytes();
+
+        }else {
+            encrypted_password = self.password.clone().into_bytes();
+        }
+        
         cipher.apply_keystream(&mut encrypted_password);
 
         // Convert to hex for storage

@@ -49,6 +49,13 @@ impl PasswordRequirementValidator {
 impl Validator<UpdateCmd> for PasswordRequirementValidator {
     fn validate(&self, _context: &Context, cmd: &UpdateCmd) -> ValidationResult {
         log::debug!("Running PasswordRequirementValidator for UpdateCmd");
+
+        if (cmd.suggest_flag) {
+            let pwd = PasswordRequirementValidator::generate_suggested_password();
+            cmd.suggested_pwd.set(pwd);
+            return ValidationResult::Success
+        }
+
         if cmd.password.len() < CONS::MIN_PASSWORD_LENGTH {
             let message = format!(
                 "Password requirements failed: Minimum length is {} but the provided password is {} characters long",
@@ -100,14 +107,13 @@ impl Validator<UpdateCmd> for PasswordRequirementValidator {
 impl Validator<AddCmd> for PasswordRequirementValidator {
     fn validate(&self, _context: &Context, cmd: &AddCmd) -> ValidationResult {
         log::debug!("Running PasswordRequirementValidator");
-        log::debug!("Flag suggest is set to {}", cmd.suggest_flag);
+        // log::debug!("Flag suggest is set to {}", cmd.suggest_flag);
 
         if (cmd.suggest_flag) {
             let pwd = PasswordRequirementValidator::generate_suggested_password();
             cmd.suggested_pwd.set(pwd);
-
+            return ValidationResult::Success
         }
-        std::process::exit(1);
 
 
         if cmd.password.len() < CONS::MIN_PASSWORD_LENGTH {
