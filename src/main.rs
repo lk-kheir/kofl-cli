@@ -37,9 +37,17 @@ enum Commands {
     Init {},
     Login {},
     Destroy {},
-    Add { name: String},
+    Add { 
+        name: String,
+        #[arg(short, long)]
+        suggest: bool
+    },
     Get { ent_name: String },
-    Update {ent_name: String}
+    Update {
+        ent_name: String,
+        #[arg(short, long)]
+        suggest: bool
+    }
 }
 
 
@@ -116,12 +124,18 @@ fn main() {
             let init_command = InitCmd::new();
             execute_command(&init_command, &context);
         }
-        Commands::Add { name} => {
-            let pwd = rpassword::prompt_password("Enter the password for the entry ===> ").unwrap();
-            let add_command = AddCmd::new(name.to_string(), pwd);
-            execute_command(&add_command, &context);
+        Commands::Add { name, suggest   } => {
+            info!("add commend with name {} and suggest flag is set to {}", name , suggest);
+            if (*suggest) {
+                let add_command = AddCmd::new(name.to_string(), String::from(""), *suggest);
+                execute_command(&add_command, &context);
+            }else {
+                let pwd = rpassword::prompt_password("Enter the password for the entry ===> ").unwrap();
+                let add_command = AddCmd::new(name.to_string(), pwd, *suggest);
+                execute_command(&add_command, &context);
+            }
         }
-        Commands::Update { ent_name} => {
+        Commands::Update { ent_name, suggest} => {
             let pwd = rpassword::prompt_password("Update the password for the entry ===> ").unwrap();
             let update_command = UpdateCmd::new(ent_name.to_string(), pwd);
             execute_command(&update_command, &context);

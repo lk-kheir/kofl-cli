@@ -9,6 +9,7 @@ use crate::db::Db::Entry;
 use chrono::prelude::*;
 use log::{debug, info, warn, error};
 use sha2::Digest;
+use std::cell::Cell;
 
 
 use aes::cipher::{
@@ -20,13 +21,20 @@ type Aes256Ctr = Ctr32BE<aes::Aes256>;
 pub struct AddCmd {
     pub name: String,
     pub password: String,
+    pub suggest_flag: bool,
+    pub suggested_pwd : Cell<String>,
 }
 
 
 impl  AddCmd {
-    pub fn new(name: String, password: String) -> AddCmd
+    pub fn new(name: String, password: String, suggest_flag: bool) -> AddCmd
     {
-        AddCmd{name, password}
+        AddCmd {
+            name,
+            password,
+            suggest_flag,
+            suggested_pwd: Cell::new(String::new()),
+        }
     }
 }
 
@@ -42,6 +50,7 @@ impl fmt::Debug for AddCmd {
         f.debug_struct("Add Command")
          .field("name", &self.name)
          .field("password", &self.password)
+         .field("suggest_flag", &self.suggest_flag)
          .finish()
     }
 }

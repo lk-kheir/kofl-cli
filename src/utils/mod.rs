@@ -4,8 +4,6 @@ pub mod Utils {
     use std::env;
     use std::path::PathBuf;
     use std::fs;
-
-    use log::debug;
     
     /// Utility function to get the user's home directory.
     /// Returns a PathBuf representing the home directory path.
@@ -44,7 +42,7 @@ pub mod Utils {
 
     pub fn check_existing_config() -> bool {
         if let Some(home_dir) = get_home_dir() {
-            debug!("home dir = {:?}", home_dir.join(".kofl"));
+            println!("home dir = {:?}", home_dir.join(".kofl"));
             return fs::exists(home_dir.join(".kofl")).unwrap();
         }
         false

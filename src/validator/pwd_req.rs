@@ -2,8 +2,9 @@ use crate::constants::CONS;
 use crate::validator::core::{Validator, ValidationResult};
 use crate::context::Context;
 use crate::cli::commands::{AddCmd, UpdateCmd};
+use rand::seq::SliceRandom;
 use regex::Regex;
-
+use rand::Rng;
 pub struct PasswordRequirementValidator {}
 
 impl PasswordRequirementValidator {
@@ -16,6 +17,31 @@ impl PasswordRequirementValidator {
         }
         false
     }
+
+    fn generate_suggested_password() -> String {
+        let mut rng = rand::thread_rng();
+        let uppercase: char = rng.gen_range(b'A'..=b'Z') as char;
+        let lowercase: char = rng.gen_range(b'a'..=b'z') as char;
+        let digit: char = rng.gen_range(b'0'..=b'9') as char;
+        let special_chars = ['!', '@', '#', '$', '%', '^', '&', '*'];
+        let special: char = *special_chars.choose(&mut rng).unwrap();
+        let mut password: Vec<char> = vec![uppercase, lowercase, digit, special];
+
+        while password.len() < CONS::MIN_PASSWORD_LENGTH + 16 {
+            let char_type = rng.gen_range(0..4);
+            let next_char = match char_type {
+                0 => rng.gen_range(b'A'..=b'Z') as char,
+                1 => rng.gen_range(b'a'..=b'z') as char,
+                2 => rng.gen_range(b'0'..=b'9') as char,
+                _ => *special_chars.choose(&mut rng).unwrap(),
+            };
+            password.push(next_char);
+        }
+
+        let password: String = password.into_iter().collect();
+        password
+    }
+
 }
 
 
@@ -74,6 +100,16 @@ impl Validator<UpdateCmd> for PasswordRequirementValidator {
 impl Validator<AddCmd> for PasswordRequirementValidator {
     fn validate(&self, _context: &Context, cmd: &AddCmd) -> ValidationResult {
         log::debug!("Running PasswordRequirementValidator");
+        log::debug!("Flag suggest is set to {}", cmd.suggest_flag);
+
+        if (cmd.suggest_flag) {
+            let pwd = PasswordRequirementValidator::generate_suggested_password();
+            cmd.suggested_pwd.set(pwd);
+
+        }
+        std::process::exit(1);
+
+
         if cmd.password.len() < CONS::MIN_PASSWORD_LENGTH {
             let message = format!(
                 "Password requirements failed: Minimum length is {} but the provided password is {} characters long",
