@@ -1,3 +1,57 @@
+
+am thinking about adding list command to list all added entries
+am thinking also to add some config after asking the user for master password like how often does he want the
+session duration minimal length password how much time after pwd is copied to clibboard to clear it and more ??
+
+
+it could be nice when init command is triggerd to walk the user through all the settings
+then  ask for master pwd, later I can Implement a kofl config command to modify those values
+
+
+
+Recommended Configuration Parameters for kofl Password Manager
+Essential Security Parameters
+master_password_min_length: Minimum character length for the master password (recommend 12+)
+password_complexity_requirements: Which character types must be included (uppercase, lowercase, numbers, symbols)
+kdf_algorithm: Key derivation function to use (e.g., Argon2id, PBKDF2)
+kdf_iterations: Number of iterations for key derivation (higher = more secure but slower)
+failed_login_attempts_limit: How many failed attempts before temporary lockout
+failed_login_lockout_duration: Duration of lockout after too many failed attempts
+Session Management
+session_duration: How long an authenticated session remains valid (e.g., 15m, 1h, 8h)
+auto_lock_on_idle: Whether to automatically lock after inactivity
+idle_timeout: How many minutes of inactivity before auto-locking
+require_password_for_sensitive_actions: Whether to require master password re-entry for critical operations
+Password Generation
+default_password_length: Default length for generated passwords
+generated_password_character_set: Which character sets to include by default
+exclude_ambiguous_characters: Whether to exclude similar-looking characters (0/O, 1/l/I)
+password_generation_strategy: Word-based (passphrase) or purely random
+User Experience
+clipboard_timeout: How many seconds before clearing passwords from clipboard
+show_passwords_by_default: Whether to display or mask passwords in the UI
+confirm_deletions: Whether to require confirmation before deleting entries
+default_sort_order: How to sort password entries by default (alphabetical, recent, etc.)
+Backup and Recovery
+auto_backup_frequency: How often to create automatic backups
+backup_location: Where to store backups
+backup_retention_count: Number of backup files to keep before removing old ones
+backup_encryption: Whether backups should be encrypted with the master password
+System Integration
+launch_at_startup: Whether to start the application when system boots
+minimize_to_tray: Whether to minimize to system tray instead of closing
+browser_integration: Whether to enable integration with web browsers
+Minimum Viable Configuration Set
+If you want to start with just the most important settings:
+
+master_password_min_length: Critical security baseline
+session_duration: Controls frequency of authentication
+clipboard_timeout: Privacy protection measure
+auto_lock_on_idle: Prevents unauthorized access when away
+default_password_length: Improves user experience for password generation
+backup_location: Ensures data is preserved
+kdf_iterations: Allows balance between security and performance
+
 # Password Complexity Requirements
 
 
