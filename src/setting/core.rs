@@ -1,13 +1,19 @@
-//src/stting/core.rs
-
+use crate::setting::setting_value::SettingValue;
+use crate::setting::setting_key::SettingKey;
 
 pub trait Setting {
-    type Value;
+    fn key(&self) -> SettingKey;
+    fn default(&self) -> SettingValue;
+    fn validate(&self, value: &SettingValue) -> Result<(), String>;
+    fn update(&mut self, value: SettingValue) -> Result<(), String>;
+    fn get_value(&self) -> SettingValue;
     
-    fn name(&self) -> &str;
-    fn description(&self) -> &str;
-    fn default() -> Self::Value;
-    fn validate(&self, Value: Self::Value) -> Result<(), String>;
-    fn update(&mut self, value: Self::Value) -> Result<(), String>;
-
+    // These can be derived from the enum
+    fn name(&self) -> String {
+        self.key().to_string()
+    }
+    
+    fn description(&self) -> &'static str {
+        self.key().description()
+    }
 }

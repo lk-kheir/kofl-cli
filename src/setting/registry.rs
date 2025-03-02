@@ -1,40 +1,53 @@
-// src/setting/registry.rs
-
 use std::collections::HashMap;
 use crate::setting::core::Setting;
+use crate::setting::setting_value::SettingValue;
+use crate::setting::setting_key::SettingKey;
 use crate::setting::session_duration::SessionDuration;
 
-struct SettingsRegistry {
-    settings: HashMap<String, Box<dyn Setting>>,
+pub struct SettingsRegistry {
+    settings: HashMap<SettingKey, Box<dyn Setting>>,
 }
-
 
 impl SettingsRegistry {
     pub fn new() -> Self {
-        let mut settings = HashMap::new();
+        let mut registry = Self {
+            settings: HashMap::new(),
+        };
         
-        // Initialize with default settings
-        if let Ok(session_duration) = SessionDuration::new(SessionDuration::default()) {
-            settings.insert(
-                session_duration.name().to_string(), 
-                Box::new(session_duration)
-            );
+        // Register default settings
+        registry.register(Box::new(SessionDuration::new()));
+        
+        registry
+    }
+    
+    pub fn register(&mut self, setting: Box<dyn Setting>) {
+        self.settings.insert(setting.key(), setting);
+    }
+    
+    pub fn get(&self, key: SettingKey) -> Option<&dyn Setting> {
+        match self.settings.get(&key) {
+            Some(boxed_setting) => Some(boxed_setting.as_ref()),
+            None => None,
         }
-        
-        Self { settings }
     }
     
-    // Get immutable reference to a setting
-    pub fn get(&self, name: &str) -> Option<&dyn Setting> {
-        self.settings.get(name).map(|boxed| boxed.as_ref())
+    pub fn get_mut(&mut self, key: SettingKey) -> Option<&mut (dyn Setting + '_)> {
+        match self.settings.get_mut(&key) {
+            Some(boxed_setting) => Some(boxed_setting.as_mut()),
+            None => None,
+        }
     }
     
-    // Get mutable reference to a setting
-    pub fn get_mut(&mut self, name: &str) -> Option<&mut dyn Setting> {
-        self.settings.get_mut(name).map(|boxed| boxed.as_mut())
+    pub fn update(&mut self, key: SettingKey, value: SettingValue) -> Result<(), String> {
+        match self.settings.get_mut(&key) {
+            Some(setting) => setting.update(value),
+            None => Err(format!("Setting '{:?}' not found", key)),
+        }
+    }
+    
+    // Convenience getters for common settings
+    pub fn session_duration(&self) -> Option<u32> {
+        self.get(SettingKey::SessionDuration)
+            .and_then(|setting| setting.get_value().as_u32().ok())
     }
 }
-
-
-
-
