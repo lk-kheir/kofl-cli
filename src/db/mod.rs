@@ -114,6 +114,25 @@ pub mod Db {
             }
             Ok(entries)
         }
+
+
+        pub fn list_settings(&self) -> Result<Vec<Setting>, rusqlite::Error> {
+            let mut stmt = self.connection.prepare("SELECT key, value, description from settings")?;
+            let setting_iter = stmt.query_map([], |row| {
+                Ok(Setting {
+                    key: row.get(0)?,
+                    value: row.get(1)?,
+                    desc: row.get(2)?,
+                })
+            })?;
+    
+            let mut settings = Vec::new();
+            for setting in setting_iter {
+                settings.push(setting?);
+            }
+            Ok(settings)
+        }
+        
     
         pub fn get_setting_value(&self, key: &str) -> Result<Option<String>> {
             let mut stmt = self.connection.prepare("SELECT value FROM settings WHERE key = ?1")?;
@@ -156,6 +175,23 @@ pub mod Db {
                 ent_name,
                 password_hash,
                 timestamp: String::from("12-12-12")
+            }
+        }
+    }
+
+    pub struct Setting {
+        pub key : String,
+        pub value: String,
+        pub desc: String,
+    }
+
+    impl Setting{
+        pub fn new(key: String, value: String, desc: String) -> Self
+        {
+            Setting {
+                key,
+                value,
+                desc,
             }
         }
     }

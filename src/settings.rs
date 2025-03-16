@@ -12,7 +12,7 @@ pub enum Setting {
 }
 
 impl Setting {
-    fn key(&self) -> &'static str {
+    pub fn key(&self) -> &'static str {
         match self {
             Setting::SessionDuration => "session_duration",
             Setting::ClipboardTimeout => "clipboard_timeout", 
@@ -21,7 +21,7 @@ impl Setting {
         }
     }
     
-    fn default_value(&self) -> &'static str {
+    pub fn default_value(&self) -> &'static str {
         match self {
             Setting::SessionDuration => "30",
             Setting::ClipboardTimeout => "10",
@@ -30,7 +30,7 @@ impl Setting {
         }
     }
     
-    fn description(&self) -> &'static str {
+    pub fn description(&self) -> &'static str {
         match self {
             Setting::SessionDuration => "Duration of session in minutes",
             Setting::ClipboardTimeout => "Time in seconds before clipboard is cleared",
@@ -39,7 +39,7 @@ impl Setting {
         }
     }
     
-    fn validate(&self, value: &str) -> Result<(), String> {
+    pub fn validate(&self, value: &str) -> Result<(), String> {
         match self {
             Setting::SessionDuration => {
                 match value.parse::<u32>() {
@@ -64,6 +64,15 @@ impl SettingsManager {
         Self {
             cache: HashMap::new(),
         }
+    }
+
+    pub fn list_settings(&self) -> Vec<Setting> {
+        vec![
+            Setting::SessionDuration,
+            Setting::ClipboardTimeout,
+            Setting::DefaultTimeout,
+            Setting::EncryptionIterations
+        ]
     }
 
     // Initialize default settings in the database
