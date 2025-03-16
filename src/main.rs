@@ -9,7 +9,7 @@ mod errors;
 mod session;
 mod utils;
 mod validator;
-mod setting;
+mod settings;
 mod constants;
 
 

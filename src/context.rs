@@ -1,4 +1,5 @@
 use crate::config::Config::KoflGlobalConfig;
+use crate::settings::SettingsManager;
 use crate::db::Db::Database;
 use crate::errors::ErrorSetup;
 use crate::session;
@@ -14,6 +15,7 @@ use std::io::Write;
 #[warn(unused_imports)]
 pub struct Context {
     pub kgc: RefCell<KoflGlobalConfig>,
+    pub settings: RefCell<SettingsManager>,
     pub ss: Session,
     pub db: Database,
 }
@@ -101,8 +103,24 @@ impl Context {
                 }
             }
         }
-
-        // Return the new Context
-        Ok(Context { kgc: c, db: dbase, ss: session })
+         // Create the settings manager
+         let settings_manager = SettingsManager::new();
+         let settings = RefCell::new(settings_manager);
+ 
+         // Create the context with all components
+         let context = Context { 
+             kgc: c, 
+             db: dbase, 
+             ss: session,
+             settings,
+         };
+ 
+         // Initialize default settings
+         if let Err(e) = context.settings.borrow().initialize_defaults(&context) {
+             warn!("Failed to initialize default settings: {}", e);
+         }
+ 
+         // Return the new Context
+         Ok(context)
     }
 }

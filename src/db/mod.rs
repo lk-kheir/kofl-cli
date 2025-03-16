@@ -30,6 +30,17 @@ pub mod Db {
                 );
                 "
             )?;
+
+            self.connection.execute_batch(
+                "
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    description TEXT
+                );
+                "
+            )?;
+
             Ok(())
         }
         pub fn add_entry(&self, entry: Entry) -> Result<(), rusqlite::Error> {
@@ -103,6 +114,31 @@ pub mod Db {
             }
             Ok(entries)
         }
+    
+        pub fn get_setting_value(&self, key: &str) -> Result<Option<String>> {
+            let mut stmt = self.connection.prepare("SELECT value FROM settings WHERE key = ?1")?;
+            let result = stmt.query_row(&[key], |row| row.get(0))?;
+            Ok(result)
+        }
+    
+        pub fn set_setting_value(&self, key: &str, value: &str) -> Result<()> {
+            self.connection.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)", &[key, value])?;
+            Ok(())
+        }
+    
+        pub fn get_setting_description(&self, key: &str) -> Result<Option<String>> {
+            let mut stmt = self.connection.prepare("SELECT description FROM settings WHERE key = ?1")?;
+            let result = stmt.query_row(&[key], |row| row.get(0))?;
+            Ok(result)
+        }
+    
+        pub fn initialize_default_settings(self) -> Result<()> {
+            // Insert default settings if they don't exist
+            Ok(())
+        }
+    
+    
+    
     }
 
     pub struct Entry {
