@@ -28,7 +28,10 @@ impl InitCmd {
 
 impl Command for InitCmd {
         fn execute(&self, context: &Context) -> bool  {
-            
+
+            // let's create a function that will promot the user to set crutial settings    
+
+
             let master_pwd  = rpassword::prompt_password("type a master password ==> ").unwrap();
             let master_pwd_confirmed = rpassword::prompt_password("type the master password again ==> ").unwrap();
 
@@ -71,6 +74,16 @@ impl Command for InitCmd {
         
             new_session.write_session_config_to_toml_file();
 
+            info!("Master password set successfully!");
+            info!("Kofl is now ready to use.");
+
+            info!("Default settings have been applied:");
+            info!("- Session duration: 30 minutes");
+            info!("- Clipboard timeout: 10 seconds");
+            info!("");
+            info!("{}", "To customize these settings, run:");
+            info!("  kofl settings list   # view all settings");
+            info!("  kofl settings set    # change a setting");
             true
         }
 
@@ -79,7 +92,7 @@ impl Command for InitCmd {
         let val_reg = ValidationRegistry::<InitCmd>::new();
 
         let val_checks = vec![
-            ValidationType::MasterKeyCheck,
+            ValidationType::MasterKeyCheck, // we check if the master key check does not exist
         ];
 
 

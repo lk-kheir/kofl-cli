@@ -16,7 +16,7 @@ mod constants;
 // Updated imports for the commands
 use clap::{Parser, Subcommand};
 // Import commands from the new location
-use cli::commands::{AddCmd, DestroyCmd, GetCmd, InitCmd, LogInCmd, UpdateCmd}; // Updated path
+use cli::commands::{AddCmd, DestroyCmd, GetCmd, InitCmd, LogInCmd, UpdateCmd, SettingsCmd}; // Updated path
 use cli::Command; // Import the Command trait from cli module
 use colored::*;
 use context::Context;
@@ -54,9 +54,33 @@ enum Commands {
         ent_name: String,
         #[arg(short, long)]
         suggest: bool
+    },
+    #[command(about = "Manage application settings")]
+    Settings {
+        #[command(subcommand)]
+        action: Option<SettingsCommands>,
     }
 }
-
+#[derive(Subcommand)]
+enum SettingsCommands {
+    #[command(about = "List all available settings")]
+    List {},
+    
+    #[command(about = "Get the value of a specific setting")]
+    Get {
+        #[arg(help = "The setting name to retrieve")]
+        name: String,
+    },
+    
+    #[command(about = "Set the value of a specific setting")]
+    Set {
+        #[arg(help = "The setting name to change")]
+        name: String,
+        
+        #[arg(help = "The new value for the setting")]
+        value: String,
+    },
+}
 
 fn init_logger() {
     #[cfg(feature = "prod")]
@@ -160,7 +184,25 @@ fn main() {
         Commands::Login {} => {
             let login_command = LogInCmd::new();
             execute_command(&login_command, &context);
-        }
+        },
+        Commands::Settings { action } => {
+            match action {
+                Some(SettingsCommands::List {}) => {
+                    let cmd = SettingsCmd::new_list();
+                    execute_command(&cmd, &context);
+                },
+                Some(SettingsCommands::Get { name }) => {
+                    let cmd = SettingsCmd::new_get(name.clone());
+                    execute_command(&cmd, &context);
+                },
+                Some(SettingsCommands::Set { name, value }) => {
+                    let cmd = SettingsCmd::new_set(name.clone(), value.clone());
+                    execute_command(&cmd, &context);
+                },
+                None => {
+                }
+            }
+        },
         Commands::Destroy {  } => {
             let destroy_command = DestroyCmd::new();
             execute_command(&destroy_command, &context);
